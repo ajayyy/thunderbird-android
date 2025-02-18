@@ -4,6 +4,7 @@ plugins {
     `java-library`
     id("org.jetbrains.kotlin.jvm")
     id("thunderbird.quality.detekt.typed")
+    id("thunderbird.quality.spotless")
 }
 
 java {
@@ -21,6 +22,9 @@ tasks.withType<Jar> {
 configureKotlinJavaCompatibility()
 
 dependencies {
+    implementation(platform(libs.kotlin.bom))
+    implementation(platform(libs.koin.bom))
+
     implementation(libs.bundles.shared.jvm.main)
     testImplementation(libs.bundles.shared.jvm.test)
 }

@@ -1,9 +1,9 @@
 package app.k9mail.feature.account.setup.ui.createaccount
 
 import app.k9mail.core.ui.compose.testing.ComposeTest
-import app.k9mail.core.ui.compose.testing.setContent
-import app.k9mail.core.ui.compose.theme.K9Theme
+import app.k9mail.core.ui.compose.testing.setContentWithTheme
 import app.k9mail.feature.account.setup.domain.entity.AccountUuid
+import app.k9mail.feature.account.setup.ui.FakeBrandNameProvider
 import app.k9mail.feature.account.setup.ui.createaccount.CreateAccountContract.Effect
 import app.k9mail.feature.account.setup.ui.createaccount.CreateAccountContract.State
 import assertk.assertThat
@@ -26,14 +26,13 @@ class CreateAccountScreenTest : ComposeTest() {
         val navigateNextArguments = mutableListOf<AccountUuid>()
         var navigateBackCounter = 0
 
-        setContent {
-            K9Theme {
-                CreateAccountScreen(
-                    onNext = { accountUuid -> navigateNextArguments.add(accountUuid) },
-                    onBack = { navigateBackCounter++ },
-                    viewModel = viewModel,
-                )
-            }
+        setContentWithTheme {
+            CreateAccountScreen(
+                onNext = { accountUuid -> navigateNextArguments.add(accountUuid) },
+                onBack = { navigateBackCounter++ },
+                viewModel = viewModel,
+                brandNameProvider = FakeBrandNameProvider,
+            )
         }
 
         assertThat(navigateNextArguments).isEmpty()

@@ -1,5 +1,6 @@
 package app.k9mail.ui.catalog.ui.atom.items
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -7,20 +8,23 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextBody1
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextBody2
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextButton
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextCaption
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline1
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline2
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline3
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline4
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline5
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline6
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextOverline
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextSubtitle1
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextSubtitle2
-import app.k9mail.ui.catalog.ui.common.list.itemDefaultPadding
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextBodyLarge
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextBodyMedium
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextBodySmall
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextDisplayLarge
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextDisplayMedium
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextDisplaySmall
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadlineLarge
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadlineMedium
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadlineSmall
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextLabelLarge
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextLabelMedium
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextLabelSmall
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextTitleLarge
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextTitleMedium
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextTitleSmall
+import app.k9mail.ui.catalog.ui.common.list.defaultItemPadding
+import app.k9mail.ui.catalog.ui.common.list.fullSpanItem
 import app.k9mail.ui.catalog.ui.common.list.sectionHeaderItem
 
 fun LazyGridScope.typographyItems() {
@@ -39,96 +43,112 @@ private fun LazyGridScope.textItems(
     isAnnotated: Boolean = false,
     color: Color = Color.Unspecified,
 ) {
-    item {
-        TextHeadline1(
-            text = annotatedString("Headline1", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextDisplayLarge(
+            text = annotatedString("DisplayLarge", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextHeadline2(
-            text = annotatedString("Headline2", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextDisplayMedium(
+            text = annotatedString("DisplayMedium", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextHeadline3(
-            text = annotatedString("Headline3", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
-            color = color,
-
-        )
-    }
-    item {
-        TextHeadline4(
-            text = annotatedString("Headline4", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
-            color = color,
-        )
-    }
-    item {
-        TextHeadline5(
-            text = annotatedString("Headline5", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextDisplaySmall(
+            text = annotatedString("DisplaySmall", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
 
-    item {
-        TextHeadline6(
-            text = annotatedString("Headline6", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextHeadlineLarge(
+            text = annotatedString("HeadlineLarge", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextSubtitle1(
-            text = annotatedString("Subtitle1", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextHeadlineMedium(
+            text = annotatedString("HeadlineMedium", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextSubtitle2(
-            text = annotatedString("Subtitle2", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextHeadlineSmall(
+            text = annotatedString("HeadlineSmall", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextBody1(
-            text = annotatedString("Body1", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+
+    fullSpanItem {
+        TextTitleLarge(
+            text = annotatedString("TitleLarge", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextBody2(
-            text = annotatedString("Body2", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextTitleMedium(
+            text = annotatedString("TitleMedium", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextButton(
-            text = annotatedString("Button", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextTitleSmall(
+            text = annotatedString("TitleSmall", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextCaption(
-            text = annotatedString("Caption", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+
+    fullSpanItem {
+        TextBodyLarge(
+            text = annotatedString("BodyLarge", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }
-    item {
-        TextOverline(
-            text = annotatedString("Overline", isAnnotated),
-            modifier = Modifier.itemDefaultPadding(),
+    fullSpanItem {
+        TextBodyMedium(
+            text = annotatedString("BodyMedium", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
+            color = color,
+        )
+    }
+    fullSpanItem {
+        TextBodySmall(
+            text = annotatedString("BodySmall", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
+            color = color,
+        )
+    }
+
+    fullSpanItem {
+        TextLabelLarge(
+            text = annotatedString("LabelLarge", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
+            color = color,
+        )
+    }
+    fullSpanItem {
+        TextLabelMedium(
+            text = annotatedString("LabelMedium", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
+            color = color,
+        )
+    }
+    fullSpanItem {
+        TextLabelSmall(
+            text = annotatedString("LabelSmall", isAnnotated),
+            modifier = Modifier.padding(defaultItemPadding()),
             color = color,
         )
     }

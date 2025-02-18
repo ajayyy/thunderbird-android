@@ -7,9 +7,9 @@ import assertk.assertions.prop
 import com.fsck.k9.mail.AuthType
 import com.fsck.k9.mail.AuthType.CRAM_MD5
 import com.fsck.k9.mail.AuthType.EXTERNAL
-import com.fsck.k9.mail.AuthType.LOGIN
 import com.fsck.k9.mail.AuthType.PLAIN
 import com.fsck.k9.mail.AuthenticationFailedException
+import com.fsck.k9.mail.CertificateChainException
 import com.fsck.k9.mail.CertificateValidationException
 import com.fsck.k9.mail.ConnectionSecurity
 import com.fsck.k9.mail.ConnectionSecurity.NONE
@@ -21,7 +21,6 @@ import com.fsck.k9.mail.helpers.TestTrustedSocketFactory
 import com.fsck.k9.mail.ssl.TrustedSocketFactory
 import java.io.IOException
 import java.security.NoSuchAlgorithmException
-import java.security.cert.CertificateException
 import javax.net.ssl.SSLException
 import okio.ByteString.Companion.encodeUtf8
 import org.junit.Test
@@ -34,15 +33,18 @@ import org.mockito.kotlin.verifyNoInteractions
 class Pop3ConnectionTest {
     private val socketFactory = TestTrustedSocketFactory.newInstance()
 
-    @Test(expected = CertificateValidationException::class)
-    fun `when TrustedSocketFactory throws SSLCertificateException, open() should throw CertificateValidationException`() {
+    @Test
+    fun `when TrustedSocketFactory throws wrapped CertificateChainException, open() should throw`() {
         val server = startTlsServer()
         val settings = server.createSettings(connectionSecurity = SSL_TLS_REQUIRED)
         val mockSocketFactory = mock<TrustedSocketFactory> {
-            on { createSocket(null, settings.host, settings.port, null) } doThrow SSLException(CertificateException())
+            on { createSocket(null, settings.host, settings.port, null) } doThrow
+                SSLException(CertificateChainException("irrelevant", arrayOf(), null))
         }
 
-        createAndOpenPop3Connection(settings, mockSocketFactory)
+        assertFailure {
+            createAndOpenPop3Connection(settings, mockSocketFactory)
+        }.isInstanceOf<CertificateValidationException>()
     }
 
     @Test(expected = MessagingException::class)
@@ -381,7 +383,7 @@ class Pop3ConnectionTest {
     }
 
     private fun MockPop3Server.createSettings(
-        authType: AuthType = LOGIN,
+        authType: AuthType = PLAIN,
         connectionSecurity: ConnectionSecurity = NONE,
     ): Pop3Settings {
         return SimplePop3Settings().apply {

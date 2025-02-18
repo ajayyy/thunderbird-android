@@ -3,14 +3,18 @@ package app.k9mail.feature.account.setup.ui.autodiscovery
 import androidx.lifecycle.viewModelScope
 import app.k9mail.autodiscovery.api.AutoDiscoveryResult
 import app.k9mail.autodiscovery.api.ImapServerSettings
+import app.k9mail.autodiscovery.api.IncomingServerSettings
+import app.k9mail.autodiscovery.demo.DemoServerSettings
 import app.k9mail.core.common.domain.usecase.validation.ValidationResult
 import app.k9mail.core.ui.compose.common.mvi.BaseViewModel
 import app.k9mail.feature.account.common.domain.AccountDomainContract
+import app.k9mail.feature.account.common.domain.entity.IncomingProtocolType
 import app.k9mail.feature.account.common.domain.input.StringInputField
 import app.k9mail.feature.account.oauth.domain.entity.OAuthResult
 import app.k9mail.feature.account.oauth.ui.AccountOAuthContract
 import app.k9mail.feature.account.setup.domain.DomainContract.UseCase
 import app.k9mail.feature.account.setup.domain.entity.AutoDiscoveryAuthenticationType
+import app.k9mail.feature.account.setup.ui.autodiscovery.AccountAutoDiscoveryContract.AutoDiscoveryUiResult
 import app.k9mail.feature.account.setup.ui.autodiscovery.AccountAutoDiscoveryContract.ConfigStep
 import app.k9mail.feature.account.setup.ui.autodiscovery.AccountAutoDiscoveryContract.Effect
 import app.k9mail.feature.account.setup.ui.autodiscovery.AccountAutoDiscoveryContract.Error
@@ -149,6 +153,18 @@ internal class AccountAutoDiscoveryViewModel(
     }
 
     private fun updateAutoDiscoverySettings(settings: AutoDiscoveryResult.Settings) {
+        if (settings.incomingServerSettings is DemoServerSettings) {
+            updateState {
+                it.copy(
+                    isLoading = false,
+                    autoDiscoverySettings = settings,
+                    configStep = ConfigStep.PASSWORD,
+                    isNextButtonVisible = true,
+                )
+            }
+            return
+        }
+
         val imapServerSettings = settings.incomingServerSettings as ImapServerSettings
         val isOAuth = imapServerSettings.authenticationTypes.first() == AutoDiscoveryAuthenticationType.OAuth2
 
@@ -254,6 +270,29 @@ internal class AccountAutoDiscoveryViewModel(
     private fun navigateNext(isAutomaticConfig: Boolean) {
         accountStateRepository.setState(state.value.toAccountState())
 
-        emitEffect(Effect.NavigateNext(isAutomaticConfig))
+        emitEffect(
+            Effect.NavigateNext(
+                result = mapToAutoDiscoveryResult(
+                    isAutomaticConfig = isAutomaticConfig,
+                    incomingServerSettings = state.value.autoDiscoverySettings?.incomingServerSettings,
+                ),
+            ),
+        )
+    }
+
+    private fun mapToAutoDiscoveryResult(
+        isAutomaticConfig: Boolean,
+        incomingServerSettings: IncomingServerSettings?,
+    ): AutoDiscoveryUiResult {
+        val incomingProtocolType = if (incomingServerSettings is ImapServerSettings) {
+            IncomingProtocolType.IMAP
+        } else {
+            null
+        }
+
+        return AutoDiscoveryUiResult(
+            isAutomaticConfig = isAutomaticConfig,
+            incomingProtocolType = incomingProtocolType,
+        )
     }
 }

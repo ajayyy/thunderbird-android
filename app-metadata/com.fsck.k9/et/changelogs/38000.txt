@@ -1,0 +1,7 @@
+- uus ja täiustatud konto seadistus
+- võimalus naasta kirjade loendisse pärast sõnumi lugematuks märkimist sõnumivaates
+- sõnumiloendis juhuslike viipamistoimingute käivitamine on raskem
+- parem ekraanilugeja kasutus erinevates kohtades
+- IMAP: tugi ID-käskluse saatmiseks (mida nõuavad mõned teenusepakkujad)
+- mitmesugused muud veaparandused ja täiustused; vaata versioonide 6.7xx muudatusi
+- eemaldati puudulikud heebrea ja korea keelte tõlked; vabatahtlikud tõlkijad teretulnud!

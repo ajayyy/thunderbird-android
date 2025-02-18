@@ -54,8 +54,10 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
 
 class RealImapFolderTest {
+    private val imapStoreConfig = FakeImapStoreConfig()
     private val internalImapStore = object : InternalImapStore {
         override val logLabel = "Account"
+        override val config = imapStoreConfig
         override fun getCombinedPrefix() = ""
         override fun getPermanentFlagsIndex() = mutableSetOf<Flag>()
     }
@@ -282,8 +284,8 @@ class RealImapFolderTest {
 
         assertFailure {
             sourceFolder.copyMessages(messages, destinationFolder)
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder Source is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Source' is not open.")
     }
 
     @Test
@@ -298,6 +300,34 @@ class RealImapFolderTest {
         val uidMapping = sourceFolder.copyMessages(messages, destinationFolder)
 
         assertThat(uidMapping).isNotNull().containsOnly("1" to "101")
+    }
+
+    @Test
+    fun `moveMessages() on closed folder should throw`() {
+        val sourceFolder = createFolder("Source")
+        val destinationFolder = createFolder("Destination")
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            sourceFolder.moveMessages(messages, destinationFolder)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Source' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `moveMessages() on folder opened as read-only should throw`() {
+        val sourceFolder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        sourceFolder.open(OpenMode.READ_ONLY)
+        val destinationFolder = createFolder("Destination")
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            sourceFolder.moveMessages(messages, destinationFolder)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
     }
 
     @Test
@@ -355,7 +385,26 @@ class RealImapFolderTest {
     }
 
     @Test
-    fun `moveMessages() should delete messages from source folder but not issue EXPUNGE command`() {
+    fun `moveMessages() with expungeImmediately = true should delete and expunge`() {
+        imapStoreConfig.expungeImmediately = true
+        val sourceFolder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        imapConnection.stub {
+            on { isUidPlusCapable } doReturn false
+        }
+        val destinationFolder = createFolder("Destination")
+        val messages = listOf(createImapMessage("1"))
+        sourceFolder.open(OpenMode.READ_WRITE)
+
+        sourceFolder.moveMessages(messages, destinationFolder)
+
+        assertCommandWithIdsIssued("UID STORE 1 +FLAGS.SILENT (\\Deleted)")
+        assertCommandIssued("EXPUNGE")
+    }
+
+    @Test
+    fun `moveMessages() with expungeImmediately = false should delete but not expunge`() {
+        imapStoreConfig.expungeImmediately = false
         val sourceFolder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_WRITE)
         imapConnection.stub {
@@ -405,8 +454,8 @@ class RealImapFolderTest {
 
         assertFailure {
             folder.unreadMessageCount
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder FolderName is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'FolderName' is not open.")
     }
 
     @Test
@@ -441,8 +490,8 @@ class RealImapFolderTest {
 
         assertFailure {
             folder.flaggedMessageCount
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder FolderName is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'FolderName' is not open.")
     }
 
     @Test
@@ -575,8 +624,8 @@ class RealImapFolderTest {
 
         assertFailure {
             folder.getMessages(1, 5, null, null)
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder FolderName is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'FolderName' is not open.")
     }
 
     @Test
@@ -585,8 +634,8 @@ class RealImapFolderTest {
 
         assertFailure {
             folder.getMessages(setOf(1L, 2L, 5L), false, null)
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder FolderName is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'FolderName' is not open.")
     }
 
     @Test
@@ -622,8 +671,8 @@ class RealImapFolderTest {
 
         assertFailure {
             folder.getMessagesFromUids(listOf("11", "22", "25"))
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder FolderName is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'FolderName' is not open.")
     }
 
     @Test
@@ -645,8 +694,8 @@ class RealImapFolderTest {
 
         assertFailure {
             folder.areMoreMessagesAvailable(10, Date())
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Folder FolderName is not open.")
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'FolderName' is not open.")
     }
 
     @Test
@@ -707,6 +756,25 @@ class RealImapFolderTest {
         folder.fetch(emptyList(), fetchProfile, null, MAX_DOWNLOAD_SIZE)
 
         assertThat(testConnectionManager.numberOfGetConnectionCalls).isEqualTo(0)
+    }
+
+    @Test
+    fun `fetch() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+        val messages = createImapMessages("1")
+        val fetchProfile = createFetchProfile()
+
+        assertFailure {
+            folder.fetch(
+                messages = messages,
+                fetchProfile = fetchProfile,
+                listener = null,
+                maxDownloadSize = MAX_DOWNLOAD_SIZE,
+            )
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
     }
 
     @Test
@@ -927,6 +995,20 @@ class RealImapFolderTest {
     }
 
     @Test
+    fun `fetchPart() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+        val message = createImapMessage("1")
+        val part = createPart("TEXT")
+
+        assertFailure {
+            folder.fetchPart(message = message, part = part, bodyFactory = mock(), maxDownloadSize = 4096)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
     fun fetchPart_withTextSection_shouldIssueRespectiveCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_ONLY)
@@ -971,6 +1053,32 @@ class RealImapFolderTest {
         val buffer = Buffer()
         body.writeTo(buffer.outputStream())
         assertThat(buffer.readUtf8()).isEqualTo("text")
+    }
+
+    @Test
+    fun `appendMessages() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            folder.appendMessages(messages)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `appendMessages() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            folder.appendMessages(messages)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
     }
 
     @Test
@@ -1043,9 +1151,145 @@ class RealImapFolderTest {
     }
 
     @Test
+    fun `deleteMessages() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            folder.deleteMessages(messages)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `deleteMessages() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            folder.deleteMessages(messages)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
+    }
+
+    @Test
+    fun `deleteMessages() with expungeImmediately = true should set deleted flag and expunge message`() {
+        imapStoreConfig.expungeImmediately = true
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        imapConnection.stub {
+            on { isUidPlusCapable } doReturn true
+        }
+        folder.open(OpenMode.READ_WRITE)
+        val messages = listOf(createImapMessage("1"))
+
+        folder.deleteMessages(messages)
+
+        assertCommandWithIdsIssued("UID STORE 1 +FLAGS.SILENT (\\Deleted)")
+        assertCommandWithIdsIssued("UID EXPUNGE 1")
+    }
+
+    @Test
+    fun `deleteMessages() with expungeImmediately = false should set deleted flag but not expunge message`() {
+        imapStoreConfig.expungeImmediately = false
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        imapConnection.stub {
+            on { isUidPlusCapable } doReturn true
+        }
+        folder.open(OpenMode.READ_WRITE)
+        val messages = listOf(createImapMessage("1"))
+
+        folder.deleteMessages(messages)
+
+        assertCommandWithIdsIssued("UID STORE 1 +FLAGS.SILENT (\\Deleted)")
+        verify(imapConnection, never()).executeCommandWithIdSet("UID EXPUNGE", "", setOf(1L))
+        verify(imapConnection, never()).executeSimpleCommand("EXPUNGE")
+    }
+
+    @Test
+    fun `deleteAllMessages() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+
+        assertFailure {
+            folder.deleteAllMessages()
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `deleteAllMessages() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+
+        assertFailure {
+            folder.deleteAllMessages()
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
+    }
+
+    @Test
+    fun `deleteAllMessages() with expungeImmediately = true should set deleted flag and expunge`() {
+        imapStoreConfig.expungeImmediately = true
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
+
+        folder.deleteAllMessages()
+
+        assertCommandIssued("UID STORE 1:* +FLAGS.SILENT (\\Deleted)")
+        assertCommandIssued("EXPUNGE")
+    }
+
+    @Test
+    fun `deleteAllMessages() with expungeImmediately = false should set deleted flag but not expunge`() {
+        imapStoreConfig.expungeImmediately = false
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
+
+        folder.deleteAllMessages()
+
+        assertCommandIssued("UID STORE 1:* +FLAGS.SILENT (\\Deleted)")
+        verify(imapConnection, never()).executeSimpleCommand("EXPUNGE")
+    }
+
+    @Test
+    fun `expunge() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+
+        assertFailure {
+            folder.expunge()
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `expunge() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+
+        assertFailure {
+            folder.expunge()
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
+    }
+
+    @Test
     fun expunge_shouldIssueExpungeCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
 
         folder.expunge()
 
@@ -1053,9 +1297,34 @@ class RealImapFolderTest {
     }
 
     @Test
+    fun `expungeUids() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+
+        assertFailure {
+            folder.expungeUids(listOf("1"))
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `expungeUids() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+
+        assertFailure {
+            folder.expungeUids(listOf("1"))
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
+    }
+
+    @Test
     fun expungeUids_withUidPlus_shouldIssueUidExpungeCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
         whenever(imapConnection.isUidPlusCapable).thenReturn(true)
 
         folder.expungeUids(listOf("1"))
@@ -1067,6 +1336,7 @@ class RealImapFolderTest {
     fun expungeUids_withoutUidPlus_shouldIssueExpungeCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
         whenever(imapConnection.isUidPlusCapable).thenReturn(false)
 
         folder.expungeUids(listOf("1"))
@@ -1075,19 +1345,95 @@ class RealImapFolderTest {
     }
 
     @Test
-    fun setFlags_shouldIssueUidStoreCommand() {
+    fun `setFlagsForAllMessages() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+
+        assertFailure {
+            folder.setFlagsForAllMessages(setOf(Flag.SEEN), true)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `setFlagsForAllMessages() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+
+        assertFailure {
+            folder.setFlagsForAllMessages(setOf(Flag.SEEN), true)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
+    }
+
+    @Test
+    fun setFlagsForAllMessages_shouldIssueUidStoreCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
 
-        folder.setFlags(setOf(Flag.SEEN), true)
+        folder.setFlagsForAllMessages(setOf(Flag.SEEN), true)
 
         assertCommandIssued("UID STORE 1:* +FLAGS.SILENT (\\Seen)")
+    }
+
+    @Test
+    fun `setFlags() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            folder.setFlags(messages, setOf(Flag.SEEN), true)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
+    }
+
+    @Test
+    fun `setFlags() on folder opened as read-only should throw`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
+        val messages = listOf(createImapMessage("1"))
+
+        assertFailure {
+            folder.setFlags(messages, setOf(Flag.SEEN), true)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' needs to be opened for read-write access.")
+    }
+
+    @Test
+    fun `setFlags() should issue UID STORE command`() {
+        val folder = createFolder("Folder")
+        prepareImapFolderForOpen(OpenMode.READ_WRITE)
+        folder.open(OpenMode.READ_WRITE)
+        val messages = listOf(createImapMessage("1"))
+
+        folder.setFlags(messages, setOf(Flag.SEEN), true)
+
+        assertCommandWithIdsIssued("UID STORE 1 +FLAGS.SILENT (\\Seen)")
+    }
+
+    @Test
+    fun `search() on closed folder should throw`() {
+        val folder = createFolder("Folder")
+
+        assertFailure {
+            folder.search("query", setOf(Flag.SEEN), emptySet(), true)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("Folder 'Folder' is not open.")
+
+        verifyNoMoreInteractions(imapConnection)
     }
 
     @Test
     fun search_withFullTextSearchEnabled_shouldIssueRespectiveCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
         setupUidSearchResponses("1 OK SEARCH completed")
 
         folder.search("query", setOf(Flag.SEEN), emptySet(), true)
@@ -1099,6 +1445,7 @@ class RealImapFolderTest {
     fun search_withFullTextSearchDisabled_shouldIssueRespectiveCommand() {
         val folder = createFolder("Folder")
         prepareImapFolderForOpen(OpenMode.READ_ONLY)
+        folder.open(OpenMode.READ_ONLY)
         setupUidSearchResponses("1 OK SEARCH completed")
 
         folder.search("query", emptySet(), emptySet(), false)

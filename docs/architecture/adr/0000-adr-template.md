@@ -1,4 +1,11 @@
-# [NNNN] - [Descriptive Title in Title Case]
+# Descriptive Title in Title Case
+
+- Issue: [#NNNN](https://github.com/thunderbird/thunderbird-android/issues/NNNN)
+- Pull Request: [#NNNN](https://github.com/thunderbird/thunderbird-android/pull/NNNN)
+
+<!-- optional in case there are follow-up issues
+- Tracking Issue: [#NNNN](https://github.com/thunderbird/thunderbird-android/issues/NNNN)
+-->
 
 ## Status
 
@@ -18,12 +25,12 @@
 
 <!-- [Explanation of the consequences of the decision. This includes both the positive and negative effects, and any potential risks.] -->
 
-- **Positive Consequences**
+### Positive Consequences
 
-  - consequence 1
-  - consequence 2
+- consequence 1
+- consequence 2
 
-- **Negative Consequences**
+### Negative Consequences
 
-  - consequence 1
-  - consequence 2
+- consequence 1
+- consequence 2

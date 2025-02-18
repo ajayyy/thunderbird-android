@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.fsck.k9.ui.compose.RecipientTokenLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minHeight="32dp"
+    >
+
+    <View
+        android:id="@+id/background"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="?attr/contactTokenBackgroundColor"
+        />
+
+    <com.fsck.k9.ui.compose.RecipientCircleImageView
+        android:id="@+id/contact_photo"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        tools:src="@drawable/ic_account_circle"
+        />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@android:id/text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:padding="4sp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        tools:text="Jane Doe"
+        />
+
+    <FrameLayout
+        android:id="@+id/crypto_status_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        >
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/contact_crypto_status_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:contentDescription="@null"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_status_corner"
+            app:tint="?openpgp_black"
+            tools:visibility="visible"
+            />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/contact_crypto_status_icon_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:contentDescription="@null"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_status_corner"
+            app:tint="?openpgp_green"
+            tools:visibility="gone"
+            />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/contact_crypto_status_icon_error"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:contentDescription="@null"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_status_corner"
+            app:tint="?openpgp_red"
+            tools:visibility="gone"
+            />
+
+    </FrameLayout>
+
+</com.fsck.k9.ui.compose.RecipientTokenLayout>

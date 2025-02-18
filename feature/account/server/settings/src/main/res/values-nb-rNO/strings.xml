@@ -4,7 +4,6 @@
     <string name="account_server_settings_validation_error_username_required">Brukernavn kreves.</string>
     <string name="account_server_settings_outgoing_top_bar_title">Innstillinger for utgående tjener</string>
     <string name="account_server_settings_validation_error_password_required">Passord kreves.</string>
-    <string name="account_server_settings_incoming_imap_send_client_id_label">Send klient-ID</string>
     <string name="account_server_settings_authentication_client_oauth">OAuth 2.0</string>
     <string name="account_server_settings_authentication_none">Ingen</string>
     <string name="account_server_settings_authentication_password_encrypted">Kryptert passord</string>
@@ -31,4 +30,6 @@
     <string name="account_server_settings_password_authentication_title">Bekreft din identitet</string>
     <string name="account_server_settings_password_authentication_subtitle">Lås opp for å vise passordet ditt</string>
     <string name="account_server_settings_password_authentication_screen_lock_required">Skru på skjermlås for enheten for å vise passordet ditt her.</string>
+    <string name="account_server_settings_validation_error_server_invalid_ip_or_hostname">Ugyldig IP eller vertsnavn</string>
+    <string name="account_server_settings_incoming_imap_send_client_info_label">Send klientinformasjon</string>
 </resources>

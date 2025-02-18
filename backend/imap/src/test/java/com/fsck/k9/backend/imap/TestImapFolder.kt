@@ -17,6 +17,9 @@ open class TestImapFolder(override val serverId: String) : ImapFolder {
     override var mode: OpenMode? = null
         protected set
 
+    override val isOpen: Boolean
+        get() = mode != null
+
     override var messageCount: Int = 0
 
     var wasExpunged: Boolean = false
@@ -136,7 +139,7 @@ open class TestImapFolder(override val serverId: String) : ImapFolder {
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun setFlags(flags: Set<Flag>, value: Boolean) {
+    override fun setFlagsForAllMessages(flags: Set<Flag>, value: Boolean) {
         if (value) {
             for (messageFlagSet in messageFlags.values) {
                 messageFlagSet.addAll(flags)
@@ -166,6 +169,14 @@ open class TestImapFolder(override val serverId: String) : ImapFolder {
 
     override fun moveMessages(messages: List<ImapMessage>, folder: ImapFolder): Map<String, String>? {
         throw UnsupportedOperationException("not implemented")
+    }
+
+    override fun deleteMessages(messages: List<ImapMessage>) {
+        setFlags(messages, setOf(Flag.DELETED), true)
+    }
+
+    override fun deleteAllMessages() {
+        setFlagsForAllMessages(setOf(Flag.DELETED), true)
     }
 
     override fun expunge() {

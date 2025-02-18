@@ -8,15 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import app.k9mail.core.ui.compose.common.PreviewDevices
 import app.k9mail.core.ui.compose.designsystem.molecule.ErrorView
 import app.k9mail.core.ui.compose.designsystem.molecule.LoadingView
-import app.k9mail.core.ui.compose.theme.K9Theme
-import app.k9mail.core.ui.compose.theme.MainTheme
-import app.k9mail.core.ui.compose.theme.ThunderbirdTheme
+import app.k9mail.core.ui.compose.theme2.MainTheme
 import app.k9mail.feature.account.oauth.R
 import app.k9mail.feature.account.oauth.ui.AccountOAuthContract.Event
 import app.k9mail.feature.account.oauth.ui.AccountOAuthContract.State
+import app.k9mail.feature.account.oauth.ui.view.GoogleSignInSupportText
 import app.k9mail.feature.account.oauth.ui.view.SignInView
 
 @Composable
@@ -39,11 +37,17 @@ internal fun AccountOAuthContent(
                 message = stringResource(id = R.string.account_oauth_loading_message),
             )
         } else if (state.error != null) {
-            ErrorView(
-                title = stringResource(id = R.string.account_oauth_loading_error),
-                message = state.error.toResourceString(resources),
-                onRetry = { onEvent(Event.OnRetryClicked) },
-            )
+            Column {
+                ErrorView(
+                    title = stringResource(id = R.string.account_oauth_loading_error),
+                    message = state.error.toResourceString(resources),
+                    onRetry = { onEvent(Event.OnRetryClicked) },
+                )
+
+                if (state.isGoogleSignIn) {
+                    GoogleSignInSupportText()
+                }
+            }
         } else {
             SignInView(
                 onSignInClick = { onEvent(Event.SignInClicked) },
@@ -51,27 +55,5 @@ internal fun AccountOAuthContent(
                 isEnabled = isEnabled,
             )
         }
-    }
-}
-
-@Composable
-@PreviewDevices
-internal fun AccountOAuthContentK9Preview() {
-    K9Theme {
-        AccountOAuthContent(
-            state = State(),
-            onEvent = {},
-        )
-    }
-}
-
-@Composable
-@PreviewDevices
-internal fun AccountOAuthContentThunderbirdPreview() {
-    ThunderbirdTheme {
-        AccountOAuthContent(
-            state = State(),
-            onEvent = {},
-        )
     }
 }

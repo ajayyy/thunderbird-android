@@ -39,14 +39,14 @@ class SmtpTransportTest {
     private val oAuth2TokenProvider = createMockOAuth2TokenProvider()
 
     @Test
-    fun `open() should provide hostname`() {
+    fun `open() should issue EHLO command`() {
         val server = MockSmtpServer().apply {
             output("220 localhost Simple Mail Transfer Service Ready")
             expect("EHLO [127.0.0.1]")
             output("250-localhost Hello client.localhost")
             output("250 OK")
         }
-        val transport = startServerAndCreateSmtpTransport(server, password = null)
+        val transport = startServerAndCreateSmtpTransportWithoutAuthentication(server)
 
         transport.open()
 
@@ -55,14 +55,14 @@ class SmtpTransportTest {
     }
 
     @Test
-    fun `open() without AUTH LOGIN extension should connect without authentication`() {
+    fun `open() without AUTH LOGIN extension should connect when not using authentication`() {
         val server = MockSmtpServer().apply {
             output("220 localhost Simple Mail Transfer Service Ready")
             expect("EHLO [127.0.0.1]")
             output("250-localhost Hello client.localhost")
             output("250 OK")
         }
-        val transport = startServerAndCreateSmtpTransportWithoutPassword(server)
+        val transport = startServerAndCreateSmtpTransportWithoutAuthentication(server)
 
         transport.open()
 
@@ -465,54 +465,6 @@ class SmtpTransportTest {
     }
 
     @Test
-    fun `open() with automatic auth and no transport security and AUTH CRAM-MD5 extension should use CRAM-MD5`() {
-        val server = MockSmtpServer().apply {
-            output("220 localhost Simple Mail Transfer Service Ready")
-            expect("EHLO [127.0.0.1]")
-            output("250-localhost Hello client.localhost")
-            output("250 AUTH CRAM-MD5")
-            expect("AUTH CRAM-MD5")
-            output("334 " + Base64.encode("<24609.1047914046@localhost>"))
-            expect("dXNlciAyZDBlNTcwYzZlYWI0ZjY3ZDUyZmFkN2Q1NGExZDJhYQ==")
-            output("235 2.7.0 Authentication successful")
-        }
-        val transport = startServerAndCreateSmtpTransport(
-            server,
-            authenticationType = AuthType.AUTOMATIC,
-            connectionSecurity = ConnectionSecurity.NONE,
-        )
-
-        transport.open()
-
-        server.verifyConnectionStillOpen()
-        server.verifyInteractionCompleted()
-    }
-
-    @Test
-    fun `open() with automatic auth and no transport security and AUTH PLAIN extension should throw`() {
-        val server = MockSmtpServer()
-        server.output("220 localhost Simple Mail Transfer Service Ready")
-        server.expect("EHLO [127.0.0.1]")
-        server.output("250-localhost Hello client.localhost")
-        server.output("250 AUTH PLAIN LOGIN")
-        server.expect("QUIT")
-        server.output("221 BYE")
-        val transport = startServerAndCreateSmtpTransport(
-            server,
-            authenticationType = AuthType.AUTOMATIC,
-            connectionSecurity = ConnectionSecurity.NONE,
-        )
-
-        assertFailure {
-            transport.open()
-        }.isInstanceOf<MessagingException>()
-            .hasMessage("Update your outgoing server authentication setting. AUTOMATIC authentication is unavailable.")
-
-        server.verifyConnectionClosed()
-        server.verifyInteractionCompleted()
-    }
-
-    @Test
     fun `open() with EHLO failing should try HELO`() {
         val server = MockSmtpServer().apply {
             output("220 localhost Simple Mail Transfer Service Ready")
@@ -521,7 +473,7 @@ class SmtpTransportTest {
             expect("HELO [127.0.0.1]")
             output("250 localhost")
         }
-        val transport = startServerAndCreateSmtpTransportWithoutPassword(server)
+        val transport = startServerAndCreateSmtpTransportWithoutAuthentication(server)
 
         transport.open()
 
@@ -933,8 +885,8 @@ class SmtpTransportTest {
         server.verifyInteractionCompleted()
     }
 
-    private fun startServerAndCreateSmtpTransportWithoutPassword(server: MockSmtpServer): SmtpTransport {
-        return startServerAndCreateSmtpTransport(server, AuthType.PLAIN, ConnectionSecurity.NONE, null)
+    private fun startServerAndCreateSmtpTransportWithoutAuthentication(server: MockSmtpServer): SmtpTransport {
+        return startServerAndCreateSmtpTransport(server, AuthType.NONE, ConnectionSecurity.NONE, password = null)
     }
 
     private fun startServerAndCreateSmtpTransport(

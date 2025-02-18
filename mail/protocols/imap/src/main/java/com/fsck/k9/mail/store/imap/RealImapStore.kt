@@ -11,7 +11,7 @@ import com.fsck.k9.mail.ServerSettings
 import com.fsck.k9.mail.oauth.OAuth2TokenProvider
 import com.fsck.k9.mail.ssl.TrustedSocketFactory
 import com.fsck.k9.mail.store.imap.ImapStoreSettings.autoDetectNamespace
-import com.fsck.k9.mail.store.imap.ImapStoreSettings.isSendClientId
+import com.fsck.k9.mail.store.imap.ImapStoreSettings.isSendClientInfo
 import com.fsck.k9.mail.store.imap.ImapStoreSettings.isUseCompression
 import com.fsck.k9.mail.store.imap.ImapStoreSettings.pathPrefix
 import java.io.IOException
@@ -20,7 +20,7 @@ import java.util.LinkedList
 
 internal open class RealImapStore(
     private val serverSettings: ServerSettings,
-    private val config: ImapStoreConfig,
+    override val config: ImapStoreConfig,
     private val trustedSocketFactory: TrustedSocketFactory,
     private val oauthTokenProvider: OAuth2TokenProvider?,
 ) : ImapStore, ImapConnectionManager, InternalImapStore {
@@ -143,8 +143,13 @@ internal open class RealImapStore(
             }
 
             if (RealImapFolder.INBOX.equals(serverId, ignoreCase = true)) {
+                // We always add our own inbox entry to the returned list.
                 continue
             } else if (listResponse.hasAttribute("\\NoSelect")) {
+                // RFC 3501, section 7.2.2: It is not possible to use this name as a selectable mailbox.
+                continue
+            } else if (listResponse.hasAttribute("\\NonExistent")) {
+                // RFC 5258, section 3: The "\NonExistent" attribute implies "\NoSelect".
                 continue
             }
 
@@ -212,15 +217,17 @@ internal open class RealImapStore(
         return folderName.substring(prefixLength)
     }
 
-    @Throws(MessagingException::class)
+    @Suppress("TooGenericExceptionCaught")
+    @Throws(MessagingException::class, IOException::class)
     override fun checkSettings() {
         try {
             val connection = createImapConnection()
 
             connection.open()
             connection.close()
-        } catch (e: IOException) {
-            throw MessagingException("Unable to connect", e)
+        } catch (e: Exception) {
+            Timber.e(e, "Error while checking server settings")
+            throw e
         }
     }
 
@@ -302,7 +309,7 @@ internal open class RealImapStore(
 
         override val useCompression: Boolean = serverSettings.isUseCompression
 
-        override val clientId: ImapClientId? = config.clientId().takeIf { serverSettings.isSendClientId }
+        override val clientInfo: ImapClientInfo? = config.clientInfo().takeIf { serverSettings.isSendClientInfo }
 
         override var pathPrefix: String?
             get() = this@RealImapStore.pathPrefix

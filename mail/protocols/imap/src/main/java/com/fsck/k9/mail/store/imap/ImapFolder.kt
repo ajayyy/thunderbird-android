@@ -14,6 +14,7 @@ interface ImapFolder {
     val serverId: String
     val mode: OpenMode?
     val messageCount: Int
+    val isOpen: Boolean
 
     @Throws(MessagingException::class)
     fun exists(): Boolean
@@ -69,7 +70,7 @@ interface ImapFolder {
     fun appendMessages(messages: List<Message>): Map<String, String>?
 
     @Throws(MessagingException::class)
-    fun setFlags(flags: Set<Flag>, value: Boolean)
+    fun setFlagsForAllMessages(flags: Set<Flag>, value: Boolean)
 
     @Throws(MessagingException::class)
     fun setFlags(messages: List<ImapMessage>, flags: Set<Flag>, value: Boolean)
@@ -79,6 +80,12 @@ interface ImapFolder {
 
     @Throws(MessagingException::class)
     fun moveMessages(messages: List<ImapMessage>, folder: ImapFolder): Map<String, String>?
+
+    @Throws(MessagingException::class)
+    fun deleteMessages(messages: List<ImapMessage>)
+
+    @Throws(MessagingException::class)
+    fun deleteAllMessages()
 
     @Throws(MessagingException::class)
     fun expunge()

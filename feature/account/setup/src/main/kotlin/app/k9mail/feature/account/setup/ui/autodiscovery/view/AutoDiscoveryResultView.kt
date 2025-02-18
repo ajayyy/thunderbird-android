@@ -10,18 +10,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.k9mail.autodiscovery.api.AuthenticationType
 import app.k9mail.autodiscovery.api.AutoDiscoveryResult
-import app.k9mail.autodiscovery.api.ConnectionSecurity
-import app.k9mail.autodiscovery.api.ImapServerSettings
-import app.k9mail.autodiscovery.api.SmtpServerSettings
-import app.k9mail.core.common.net.toHostname
-import app.k9mail.core.common.net.toPort
 import app.k9mail.core.ui.compose.designsystem.atom.Surface
-import app.k9mail.core.ui.compose.theme.MainTheme
-import app.k9mail.core.ui.compose.theme.PreviewWithThemes
+import app.k9mail.core.ui.compose.theme2.MainTheme
 
 @Composable
 internal fun AutoDiscoveryResultView(
@@ -31,6 +23,14 @@ internal fun AutoDiscoveryResultView(
 ) {
     val expanded = rememberSaveable {
         mutableStateOf(settings?.isTrusted?.not() ?: false)
+    }
+
+    val discoveryResultHeaderState = if (settings == null) {
+        AutoDiscoveryResultHeaderState.NoSettings
+    } else if (settings.isTrusted) {
+        AutoDiscoveryResultHeaderState.Trusted
+    } else {
+        AutoDiscoveryResultHeaderState.Untrusted
     }
 
     Column(
@@ -44,19 +44,13 @@ internal fun AutoDiscoveryResultView(
                     color = Color.Gray.copy(alpha = 0.5f),
                     shape = MainTheme.shapes.small,
                 )
-                .clickable { expanded.value = !expanded.value },
+                .clickable(enabled = discoveryResultHeaderState.isExpandable) { expanded.value = !expanded.value },
         ) {
             Column(
                 modifier = Modifier.padding(MainTheme.spacings.default),
             ) {
                 AutoDiscoveryResultHeaderView(
-                    state = if (settings == null) {
-                        AutoDiscoveryResultHeaderState.NoSettings
-                    } else if (settings.isTrusted) {
-                        AutoDiscoveryResultHeaderState.Trusted
-                    } else {
-                        AutoDiscoveryResultHeaderState.Untrusted
-                    },
+                    state = discoveryResultHeaderState,
                     isExpanded = expanded.value,
                 )
 
@@ -70,61 +64,5 @@ internal fun AutoDiscoveryResultView(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun AutoDiscoveryResultViewTrustedPreview() {
-    PreviewWithThemes {
-        AutoDiscoveryResultView(
-            settings = AutoDiscoveryResult.Settings(
-                incomingServerSettings = ImapServerSettings(
-                    hostname = "imap.example.com".toHostname(),
-                    port = 993.toPort(),
-                    connectionSecurity = ConnectionSecurity.TLS,
-                    authenticationTypes = listOf(AuthenticationType.PasswordEncrypted),
-                    username = "",
-                ),
-                outgoingServerSettings = SmtpServerSettings(
-                    hostname = "smtp.example.com".toHostname(),
-                    port = 465.toPort(),
-                    connectionSecurity = ConnectionSecurity.TLS,
-                    authenticationTypes = listOf(AuthenticationType.PasswordEncrypted),
-                    username = "",
-                ),
-                isTrusted = true,
-                source = "preview",
-            ),
-            onEditConfigurationClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun AutoDiscoveryResultViewUntrustedPreview() {
-    PreviewWithThemes {
-        AutoDiscoveryResultView(
-            settings = AutoDiscoveryResult.Settings(
-                incomingServerSettings = ImapServerSettings(
-                    hostname = "imap.example.com".toHostname(),
-                    port = 993.toPort(),
-                    connectionSecurity = ConnectionSecurity.TLS,
-                    authenticationTypes = listOf(AuthenticationType.PasswordEncrypted),
-                    username = "",
-                ),
-                outgoingServerSettings = SmtpServerSettings(
-                    hostname = "smtp.example.com".toHostname(),
-                    port = 465.toPort(),
-                    connectionSecurity = ConnectionSecurity.TLS,
-                    authenticationTypes = listOf(AuthenticationType.PasswordEncrypted),
-                    username = "",
-                ),
-                isTrusted = false,
-                source = "preview",
-            ),
-            onEditConfigurationClick = {},
-        )
     }
 }

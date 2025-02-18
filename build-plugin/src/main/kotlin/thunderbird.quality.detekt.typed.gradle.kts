@@ -19,7 +19,7 @@ configure<DetektExtension> {
 tasks.withType<Detekt>().configureEach {
     jvmTarget = ThunderbirdProjectConfig.javaCompatibilityVersion.toString()
 
-    exclude(DEFAULT_EXCLUDES)
+    exclude(defaultExcludes)
 
     reports {
         html.required.set(true)
@@ -31,17 +31,19 @@ tasks.withType<Detekt>().configureEach {
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     jvmTarget = ThunderbirdProjectConfig.javaCompatibilityVersion.toString()
 
-    exclude(DEFAULT_EXCLUDES)
+    exclude(defaultExcludes)
 }
 
 dependencies {
     detektPlugins(libs.detekt.plugin.compose)
 }
 
-val DEFAULT_EXCLUDES = listOf(
+val defaultExcludes = listOf(
     "**/.gradle/**",
     "**/.idea/**",
     "**/build/**",
     ".github/**",
     "gradle/**",
+    "**/app/k9mail/ui/utils/itemtouchhelper/**",
+    "**/app/k9mail/ui/utils/linearlayoutmanager/**",
 )

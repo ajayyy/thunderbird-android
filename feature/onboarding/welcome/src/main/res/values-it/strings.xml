@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="onboarding_welcome_start_button">Iniziamo</string>
-    <string name="onboarding_welcome_title">K-9 Mail</string>
     <string name="onboarding_welcome_import_button">Importa impostazioni</string>
-    <string name="onboarding_welcome_message">Benvenuto in K-9 Mail, il client di posta elettronica Android progettato per la sicurezza, la personalizzazione e la gestione di tutti i tuoi account email</string>
+    <string name="onboarding_welcome_text">Un\'applicazione di posta elettronica per Android open source, incentrata sulla privacy e priva di pubblicità.</string>
+    <string name="onboarding_welcome_developed_by">Sviluppata da un team dedicato della MZLA Technologies e da una community globale di volontari. Parte della famiglia Mozilla.</string>
 </resources>

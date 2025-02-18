@@ -22,6 +22,7 @@ import com.fsck.k9.mail.filter.PeekableInputStream
 import com.fsck.k9.mail.filter.SmtpDataStuffing
 import com.fsck.k9.mail.oauth.OAuth2TokenProvider
 import com.fsck.k9.mail.oauth.XOAuth2ChallengeParser
+import com.fsck.k9.mail.ssl.CertificateChainExtractor
 import com.fsck.k9.mail.ssl.TrustedSocketFactory
 import com.fsck.k9.mail.transport.smtp.SmtpHelloResponse.Hello
 import com.fsck.k9.sasl.buildOAuthBearerInitialClientResponse
@@ -35,7 +36,6 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.UnknownHostException
 import java.security.GeneralSecurityException
-import java.security.cert.CertificateException
 import java.util.Locale
 import javax.net.ssl.SSLException
 import org.apache.commons.io.IOUtils
@@ -147,75 +147,47 @@ class SmtpTransport(
             }
             parseOptionalSizeValue(extensions["SIZE"])
 
-            if (
-                username.isNotEmpty() &&
-                (!password.isNullOrEmpty() || AuthType.EXTERNAL == authType || AuthType.XOAUTH2 == authType)
-            ) {
-                when (authType) {
-                    AuthType.LOGIN, AuthType.PLAIN -> {
-                        // try saslAuthPlain first, because it supports UTF-8 explicitly
-                        if (authPlainSupported) {
-                            saslAuthPlain()
-                        } else if (authLoginSupported) {
-                            saslAuthLogin()
-                        } else {
-                            throw MissingCapabilityException("AUTH PLAIN")
-                        }
+            when (authType) {
+                AuthType.NONE -> {
+                    // The outgoing server is configured to not use any authentication. So do nothing.
+                }
+                AuthType.PLAIN -> {
+                    // try saslAuthPlain first, because it supports UTF-8 explicitly
+                    if (authPlainSupported) {
+                        saslAuthPlain()
+                    } else if (authLoginSupported) {
+                        saslAuthLogin()
+                    } else {
+                        throw MissingCapabilityException("AUTH PLAIN")
                     }
-                    AuthType.CRAM_MD5 -> {
-                        if (authCramMD5Supported) {
-                            saslAuthCramMD5()
-                        } else {
-                            throw MissingCapabilityException("AUTH CRAM-MD5")
-                        }
+                }
+                AuthType.CRAM_MD5 -> {
+                    if (authCramMD5Supported) {
+                        saslAuthCramMD5()
+                    } else {
+                        throw MissingCapabilityException("AUTH CRAM-MD5")
                     }
-                    AuthType.XOAUTH2 -> {
-                        if (oauthTokenProvider == null) {
-                            throw MessagingException("No OAuth2TokenProvider available.")
-                        } else if (authOAuthBearerSupported) {
-                            saslOAuth(OAuthMethod.OAUTHBEARER)
-                        } else if (authXoauth2Supported) {
-                            saslOAuth(OAuthMethod.XOAUTH2)
-                        } else {
-                            throw MissingCapabilityException("AUTH OAUTHBEARER")
-                        }
+                }
+                AuthType.XOAUTH2 -> {
+                    if (oauthTokenProvider == null) {
+                        throw MessagingException("No OAuth2TokenProvider available.")
+                    } else if (authOAuthBearerSupported) {
+                        saslOAuth(OAuthMethod.OAUTHBEARER)
+                    } else if (authXoauth2Supported) {
+                        saslOAuth(OAuthMethod.XOAUTH2)
+                    } else {
+                        throw MissingCapabilityException("AUTH OAUTHBEARER")
                     }
-                    AuthType.EXTERNAL -> {
-                        if (authExternalSupported) {
-                            saslAuthExternal()
-                        } else {
-                            throw MissingCapabilityException("AUTH EXTERNAL")
-                        }
+                }
+                AuthType.EXTERNAL -> {
+                    if (authExternalSupported) {
+                        saslAuthExternal()
+                    } else {
+                        throw MissingCapabilityException("AUTH EXTERNAL")
                     }
-                    AuthType.AUTOMATIC -> {
-                        if (secureConnection) {
-                            // try saslAuthPlain first, because it supports UTF-8 explicitly
-                            if (authPlainSupported) {
-                                saslAuthPlain()
-                            } else if (authLoginSupported) {
-                                saslAuthLogin()
-                            } else if (authCramMD5Supported) {
-                                saslAuthCramMD5()
-                            } else {
-                                throw MissingCapabilityException("AUTH PLAIN")
-                            }
-                        } else {
-                            if (authCramMD5Supported) {
-                                saslAuthCramMD5()
-                            } else {
-                                // We refuse to insecurely transmit the password using the obsolete AUTOMATIC setting
-                                // because of the potential for a MITM attack. Affected users must choose a different
-                                // setting.
-                                throw MessagingException(
-                                    "Update your outgoing server authentication setting. " +
-                                        "AUTOMATIC authentication is unavailable.",
-                                )
-                            }
-                        }
-                    }
-                    else -> {
-                        throw MessagingException("Unhandled authentication method found in server settings (bug).")
-                    }
+                }
+                else -> {
+                    throw MessagingException("Unhandled authentication method found in server settings (bug).")
                 }
             }
         } catch (e: MessagingException) {
@@ -223,8 +195,9 @@ class SmtpTransport(
             throw e
         } catch (e: SSLException) {
             close()
-            if (e.cause is CertificateException) {
-                throw CertificateValidationException(e.message, e)
+            val certificateChain = CertificateChainExtractor.extract(e)
+            if (certificateChain != null) {
+                throw CertificateValidationException(certificateChain, e)
             } else {
                 throw e
             }
@@ -664,12 +637,16 @@ class SmtpTransport(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     @Throws(MessagingException::class)
     fun checkSettings() {
         ensureClosed()
 
         try {
             open()
+        } catch (e: Exception) {
+            Timber.e(e, "Error while checking server settings")
+            throw e
         } finally {
             close()
         }

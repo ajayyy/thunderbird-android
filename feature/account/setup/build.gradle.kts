@@ -5,15 +5,6 @@ plugins {
 android {
     namespace = "app.k9mail.feature.account.setup"
     resourcePrefix = "account_setup_"
-
-    buildTypes {
-        debug {
-            manifestPlaceholders["appAuthRedirectScheme"] = "FIXME: override this in your app project"
-        }
-        release {
-            manifestPlaceholders["appAuthRedirectScheme"] = "FIXME: override this in your app project"
-        }
-    }
 }
 
 dependencies {
@@ -26,6 +17,7 @@ dependencies {
     implementation(projects.mail.protocols.smtp)
 
     implementation(projects.feature.autodiscovery.service)
+    implementation(projects.feature.autodiscovery.demo)
 
     api(projects.feature.account.common)
     implementation(projects.feature.account.oauth)
@@ -34,4 +26,7 @@ dependencies {
     api(projects.feature.account.server.validation)
 
     testImplementation(projects.core.ui.compose.testing)
+
+    testImplementation(platform(libs.forkhandles.bom))
+    testImplementation(libs.forkhandles.fabrikate4k)
 }

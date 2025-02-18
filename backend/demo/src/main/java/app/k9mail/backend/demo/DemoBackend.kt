@@ -104,10 +104,6 @@ class DemoBackend(private val backendStorage: BackendStorage) : Backend {
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun expungeMessages(folderServerId: String, messageServerIds: List<String>) {
-        throw UnsupportedOperationException("not implemented")
-    }
-
     override fun deleteMessages(folderServerId: String, messageServerIds: List<String>) = Unit
 
     override fun deleteAllMessages(folderServerId: String) = Unit
@@ -160,10 +156,6 @@ class DemoBackend(private val backendStorage: BackendStorage) : Backend {
     override fun uploadMessage(folderServerId: String, message: Message): String {
         return createNewServerId()
     }
-
-    override fun checkIncomingServerSettings() = Unit
-
-    override fun checkOutgoingServerSettings() = Unit
 
     override fun sendMessage(message: Message) {
         val inboxServerId = messageStoreInfo.filterValues { it.type == FolderType.INBOX }.keys.first()

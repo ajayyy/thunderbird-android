@@ -8,5 +8,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
     implementation(projects.core.ui.compose.designsystem)
+    implementation(projects.feature.onboarding.migration.api)
 }

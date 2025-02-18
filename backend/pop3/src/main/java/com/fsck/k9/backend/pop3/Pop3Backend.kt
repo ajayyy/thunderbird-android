@@ -66,10 +66,6 @@ class Pop3Backend(
         throw UnsupportedOperationException("not supported")
     }
 
-    override fun expungeMessages(folderServerId: String, messageServerIds: List<String>) {
-        throw UnsupportedOperationException("not supported")
-    }
-
     override fun deleteMessages(folderServerId: String, messageServerIds: List<String>) {
         commandSetFlag.setFlag(folderServerId, messageServerIds, Flag.DELETED, true)
     }
@@ -124,16 +120,8 @@ class Pop3Backend(
         throw UnsupportedOperationException("not supported")
     }
 
-    override fun checkIncomingServerSettings() {
-        pop3Store.checkSettings()
-    }
-
     override fun sendMessage(message: Message) {
         smtpTransport.sendMessage(message)
-    }
-
-    override fun checkOutgoingServerSettings() {
-        smtpTransport.checkSettings()
     }
 
     override fun createPusher(callback: BackendPusherCallback): BackendPusher {

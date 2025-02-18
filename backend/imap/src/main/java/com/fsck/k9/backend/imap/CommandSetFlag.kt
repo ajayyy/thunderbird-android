@@ -10,11 +10,8 @@ internal class CommandSetFlag(private val imapStore: ImapStore) {
         if (messageServerIds.isEmpty()) return
 
         val remoteFolder = imapStore.getFolder(folderServerId)
-        if (!remoteFolder.exists()) return
-
         try {
             remoteFolder.open(OpenMode.READ_WRITE)
-            if (remoteFolder.mode != OpenMode.READ_WRITE) return
 
             val messages = messageServerIds.map { uid -> remoteFolder.getMessage(uid) }
 

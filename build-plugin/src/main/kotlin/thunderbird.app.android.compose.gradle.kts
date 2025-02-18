@@ -1,6 +1,8 @@
 plugins {
     id("thunderbird.app.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("thunderbird.quality.detekt.typed")
+    id("thunderbird.quality.spotless")
 }
 
 android {
@@ -20,5 +22,5 @@ android {
 dependencies {
     configureSharedComposeDependencies(libs)
 
-    implementation(libs.androidx.compose.activity)
+    implementation(libs.androidx.activity.compose)
 }

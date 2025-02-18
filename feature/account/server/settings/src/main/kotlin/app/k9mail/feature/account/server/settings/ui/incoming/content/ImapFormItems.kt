@@ -55,9 +55,9 @@ internal fun LazyListScope.imapFormItems(
 
     item {
         CheckboxInput(
-            text = stringResource(R.string.account_server_settings_incoming_imap_send_client_id_label),
-            checked = state.imapSendClientId,
-            onCheckedChange = { onEvent(Event.ImapSendClientIdChanged(it)) },
+            text = stringResource(R.string.account_server_settings_incoming_imap_send_client_info_label),
+            checked = state.imapSendClientInfo,
+            onCheckedChange = { onEvent(Event.ImapSendClientInfoChanged(it)) },
             contentPadding = defaultItemPadding(),
         )
     }

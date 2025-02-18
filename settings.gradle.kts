@@ -1,9 +1,9 @@
 pluginManagement {
     repositories {
         includeBuild("build-plugin")
-        gradlePluginPortal()
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
@@ -12,6 +12,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven(url = "https://maven.mozilla.org/maven2")
         maven(url = "https://jitpack.io")
     }
 }
@@ -21,20 +22,13 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "k-9"
 
 include(
-    ":app-feature-preview",
+    ":app-k9mail",
+    ":app-thunderbird",
     ":app-ui-catalog",
 )
 
 include(
-    ":app:k9mail",
-    ":app:ui:base",
-    ":app:ui:legacy",
-    ":app:ui:message-list-widget",
-    ":app:core",
-    ":app:storage",
-    ":app:crypto-openpgp",
-    ":app:testing",
-    ":app:html-cleaner",
+    ":app-common",
 )
 
 include(
@@ -45,9 +39,17 @@ include(
     ":feature:onboarding:main",
     ":feature:onboarding:welcome",
     ":feature:onboarding:permissions",
+    ":feature:onboarding:migration:api",
+    ":feature:onboarding:migration:thunderbird",
+    ":feature:onboarding:migration:noop",
 )
 
 include(
+    ":feature:settings:import",
+)
+
+include(
+    ":feature:account:avatar",
     ":feature:account:common",
     ":feature:account:edit",
     ":feature:account:oauth",
@@ -59,9 +61,40 @@ include(
 
 include(
     ":feature:autodiscovery:api",
-    ":feature:autodiscovery:srvrecords",
     ":feature:autodiscovery:autoconfig",
     ":feature:autodiscovery:service",
+    ":feature:autodiscovery:demo",
+)
+
+include(
+    ":feature:navigation:drawer",
+)
+
+include(
+    ":feature:widget:message-list",
+    ":feature:widget:shortcut",
+    ":feature:widget:unread",
+)
+
+include(
+    ":feature:migration:provider",
+    ":feature:migration:qrcode",
+    ":feature:migration:launcher:api",
+    ":feature:migration:launcher:noop",
+    ":feature:migration:launcher:thunderbird",
+)
+
+include(
+    ":feature:telemetry:api",
+    ":feature:telemetry:noop",
+    ":feature:telemetry:glean",
+)
+
+include(
+    ":feature:funding:api",
+    ":feature:funding:googleplay",
+    ":feature:funding:link",
+    ":feature:funding:noop",
 )
 
 include(
@@ -73,8 +106,41 @@ include(
     ":core:android:testing",
     ":core:ui:compose:common",
     ":core:ui:compose:designsystem",
-    ":core:ui:compose:theme",
+    ":core:ui:compose:navigation",
+    ":core:ui:compose:theme2:common",
+    ":core:ui:compose:theme2:k9mail",
+    ":core:ui:compose:theme2:thunderbird",
     ":core:ui:compose:testing",
+    ":core:ui:legacy:designsystem",
+    ":core:ui:legacy:theme2:common",
+    ":core:ui:legacy:theme2:k9mail",
+    ":core:ui:legacy:theme2:thunderbird",
+    ":core:ui:theme:api",
+)
+
+include(
+    ":core:mail:folder:api",
+)
+
+include(
+    ":legacy:account",
+    ":legacy:common",
+    ":legacy:core",
+    ":legacy:crypto-openpgp",
+    ":legacy:di",
+    ":legacy:folder",
+    ":legacy:mailstore",
+    ":legacy:message",
+    ":legacy:notification",
+    ":legacy:preferences",
+    ":legacy:search",
+    ":legacy:storage",
+    ":legacy:testing",
+    ":legacy:ui:base",
+    ":legacy:ui:account",
+    ":legacy:ui:folder",
+    ":legacy:ui:legacy",
+    ":legacy:ui:theme",
 )
 
 include(
@@ -105,4 +171,11 @@ include(":plugins:openpgp-api-lib:openpgp-api")
 include(
     ":cli:autodiscovery-cli",
     ":cli:html-cleaner-cli",
+    ":cli:resource-mover-cli",
+    ":cli:translation-cli",
+)
+
+include(
+    ":library:html-cleaner",
+    ":library:TokenAutoComplete",
 )

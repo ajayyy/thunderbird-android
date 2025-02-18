@@ -19,29 +19,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import app.k9mail.core.ui.compose.common.PreviewDevices
 import app.k9mail.core.ui.compose.common.visibility.hide
 import app.k9mail.core.ui.compose.designsystem.atom.DelayedCircularProgressIndicator
 import app.k9mail.core.ui.compose.designsystem.atom.Surface
-import app.k9mail.core.ui.compose.designsystem.atom.button.Button
+import app.k9mail.core.ui.compose.designsystem.atom.button.ButtonFilled
 import app.k9mail.core.ui.compose.designsystem.atom.button.ButtonText
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadline5
+import app.k9mail.core.ui.compose.designsystem.atom.icon.IconsWithBottomRightOverlay
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextHeadlineSmall
 import app.k9mail.core.ui.compose.designsystem.template.ResponsiveWidthContainer
 import app.k9mail.core.ui.compose.designsystem.template.Scaffold
-import app.k9mail.core.ui.compose.theme.IconsWithBottomRightOverlay
-import app.k9mail.core.ui.compose.theme.K9Theme
-import app.k9mail.core.ui.compose.theme.MainTheme
+import app.k9mail.core.ui.compose.theme2.MainTheme
 import app.k9mail.feature.account.common.ui.AppTitleTopHeader
 import app.k9mail.feature.onboarding.permissions.R
 import app.k9mail.feature.onboarding.permissions.ui.PermissionsContract.Event
 import app.k9mail.feature.onboarding.permissions.ui.PermissionsContract.State
-import app.k9mail.feature.onboarding.permissions.ui.PermissionsContract.UiPermissionState
 import app.k9mail.feature.account.common.R as CommonR
 
 @Composable
 internal fun PermissionsContent(
     state: State,
     onEvent: (Event) -> Unit,
+    brandName: String,
 ) {
     val scrollState = rememberScrollState()
 
@@ -62,7 +60,7 @@ internal fun PermissionsContent(
                     .fillMaxHeight()
                     .verticalScroll(state = scrollState),
             ) {
-                HeaderArea()
+                HeaderArea(brandName = brandName)
 
                 ContentArea(state, onEvent)
 
@@ -75,13 +73,17 @@ internal fun PermissionsContent(
 }
 
 @Composable
-private fun HeaderArea() {
+private fun HeaderArea(
+    brandName: String,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        AppTitleTopHeader()
+        AppTitleTopHeader(
+            title = brandName,
+        )
 
-        TextHeadline5(
+        TextHeadlineSmall(
             text = stringResource(R.string.onboarding_permissions_screen_title),
             modifier = Modifier.padding(horizontal = MainTheme.spacings.double),
         )
@@ -144,17 +146,19 @@ private fun BottomBar(
         label = "BottomBarElevation",
     )
 
-    Surface(elevation = elevation) {
+    Surface(
+        tonalElevation = elevation,
+    ) {
         ResponsiveWidthContainer(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
                 modifier = Modifier
                     .padding(
-                        start = MainTheme.spacings.double,
-                        end = MainTheme.spacings.double,
-                        top = MainTheme.spacings.half,
-                        bottom = MainTheme.spacings.half,
+                        start = MainTheme.spacings.quadruple,
+                        end = MainTheme.spacings.quadruple,
+                        top = MainTheme.spacings.default,
+                        bottom = MainTheme.spacings.double,
                     )
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -163,7 +167,7 @@ private fun BottomBar(
                     targetState = state.isNextButtonVisible,
                     label = "NextButton",
                 ) { isNextButtonVisible ->
-                    Button(
+                    ButtonFilled(
                         text = stringResource(CommonR.string.account_common_button_next),
                         onClick = { onEvent(Event.NextClicked) },
                         modifier = Modifier.hide(!isNextButtonVisible),
@@ -177,22 +181,5 @@ private fun BottomBar(
                 }
             }
         }
-    }
-}
-
-@PreviewDevices
-@Composable
-internal fun PermissionContentPreview() {
-    K9Theme {
-        PermissionsContent(
-            state = State(
-                isLoading = false,
-                contactsPermissionState = UiPermissionState.Granted,
-                notificationsPermissionState = UiPermissionState.Denied,
-                isNotificationsPermissionVisible = true,
-                isNextButtonVisible = false,
-            ),
-            onEvent = {},
-        )
     }
 }

@@ -1,18 +1,17 @@
 package app.k9mail.core.ui.compose.designsystem.molecule.input
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.semantics.Role
 import app.k9mail.core.ui.compose.designsystem.atom.Checkbox
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextBody1
-import app.k9mail.core.ui.compose.theme.MainTheme
-import app.k9mail.core.ui.compose.theme.PreviewWithThemes
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextBodyLarge
+import app.k9mail.core.ui.compose.theme2.MainTheme
 
 @Composable
 fun CheckboxInput(
@@ -31,52 +30,19 @@ fun CheckboxInput(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onCheckedChange(!checked) },
+                .toggleable(
+                    value = checked,
+                    role = Role.Checkbox,
+                    onValueChange = { onCheckedChange(!checked) },
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MainTheme.spacings.half),
         ) {
             Checkbox(
                 checked = checked,
-                onCheckedChange = onCheckedChange,
+                onCheckedChange = null,
             )
-            TextBody1(text = text)
+            TextBodyLarge(text = text)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun CheckboxInputPreview() {
-    PreviewWithThemes {
-        CheckboxInput(
-            text = "CheckboxInput",
-            checked = false,
-            onCheckedChange = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun CheckboxInputWithErrorPreview() {
-    PreviewWithThemes {
-        CheckboxInput(
-            text = "CheckboxInput",
-            checked = false,
-            onCheckedChange = {},
-            errorMessage = "Error message",
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun CheckboxInputCheckedPreview() {
-    PreviewWithThemes {
-        CheckboxInput(
-            text = "CheckboxInput",
-            checked = true,
-            onCheckedChange = {},
-        )
     }
 }

@@ -15,13 +15,16 @@ data class ServerSettings @JvmOverloads constructor(
     val extra: Map<String, String?> = emptyMap(),
 ) {
     val isMissingCredentials: Boolean = when (authenticationType) {
+        AuthType.NONE -> false
         AuthType.EXTERNAL -> clientCertificateAlias == null
         AuthType.XOAUTH2 -> username.isBlank()
-        else -> username.isNotBlank() && password == null
+        else -> username.isBlank() || password.isNullOrBlank()
     }
 
     init {
         require(type == type.lowercase()) { "type must be all lower case" }
+        require(username.contains(LINE_BREAK).not()) { "username must not contain line break" }
+        require(password?.contains(LINE_BREAK) != true) { "password must not contain line break" }
     }
 
     fun newPassword(newPassword: String?): ServerSettings {
@@ -30,5 +33,9 @@ data class ServerSettings @JvmOverloads constructor(
 
     fun newAuthenticationType(authType: AuthType): ServerSettings {
         return this.copy(authenticationType = authType)
+    }
+
+    companion object {
+        private val LINE_BREAK = "[\\r\\n]".toRegex()
     }
 }

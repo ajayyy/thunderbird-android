@@ -29,7 +29,6 @@ class IncomingServerSettingsStateMapperKtTest {
         assertThat(result).isEqualTo(
             State(
                 username = StringInputField(value = "test@example.com"),
-                isLoading = false,
             ),
         )
     }
@@ -42,7 +41,7 @@ class IncomingServerSettingsStateMapperKtTest {
 
         val result = serverSettings.toIncomingServerSettingsState()
 
-        assertThat(result).isEqualTo(INCOMING_IMAP_STATE.copy(isLoading = false))
+        assertThat(result).isEqualTo(INCOMING_IMAP_STATE)
     }
 
     @Test
@@ -67,7 +66,7 @@ class IncomingServerSettingsStateMapperKtTest {
 
         val result = serverSettings.toIncomingServerSettingsState()
 
-        assertThat(result).isEqualTo(INCOMING_POP3_STATE.copy(isLoading = false))
+        assertThat(result).isEqualTo(INCOMING_POP3_STATE)
     }
 
     @Test
@@ -96,7 +95,7 @@ class IncomingServerSettingsStateMapperKtTest {
             imapAutodetectNamespaceEnabled = false,
             imapPrefix = StringInputField(value = "prefix"),
             imapUseCompression = true,
-            imapSendClientId = true,
+            imapSendClientInfo = true,
         )
 
         private val IMAP_SERVER_SETTINGS = ServerSettings(
@@ -112,7 +111,7 @@ class IncomingServerSettingsStateMapperKtTest {
                 autoDetectNamespace = false,
                 pathPrefix = "prefix",
                 useCompression = true,
-                sendClientId = true,
+                sendClientInfo = true,
             ),
         )
 

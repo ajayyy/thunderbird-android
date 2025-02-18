@@ -5,24 +5,27 @@ plugins {
 }
 
 configure<SpotlessExtension> {
-    kotlin {
-        ktlint(libs.versions.ktlint.get())
-            .userData(mapOf("android" to "true"))
-        target("**/*.kt")
-        targetExclude("**/build/", "**/resources/", "plugins/openpgp-api-lib/")
-    }
-    kotlinGradle {
-        ktlint(libs.versions.ktlint.get())
-        target("**/*.gradle.kts")
-        targetExclude("**/build/")
-    }
-    format("markdown") {
-        prettier()
-        target("**/*.md")
-        targetExclude("plugins/openpgp-api-lib/")
-    }
-    format("misc") {
-        target("**/*.gradle", "**/.gitignore")
-        trimTrailingWhitespace()
-    }
+    configureKotlinCheck(
+        targets = listOf(
+            "**/*.kt",
+        ),
+        project = project,
+        libs = libs,
+    )
+
+    configureKotlinGradleCheck(
+        targets = listOf(
+            "*.gradle.kts",
+        ),
+        project = project,
+        libs = libs,
+    )
+
+    configureMarkdownCheck(
+        listOf(
+            "*.md",
+        ),
+    )
+
+    configureMiscCheck()
 }

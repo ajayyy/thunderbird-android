@@ -1,14 +1,11 @@
 package com.fsck.k9.mail.store.imap
 
-import assertk.all
 import assertk.assertFailure
 import assertk.assertThat
-import assertk.assertions.cause
 import assertk.assertions.containsExactly
-import assertk.assertions.hasMessage
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import com.fsck.k9.mail.AuthType
 import com.fsck.k9.mail.ConnectionSecurity
 import com.fsck.k9.mail.FolderType
@@ -44,18 +41,16 @@ class RealImapStoreTest {
     }
 
     @Test
-    fun `checkSettings() with open throwing should throw MessagingException`() {
+    fun `checkSettings() with open throwing an IOException should pass it through`() {
+        val ioException = IOException()
         val imapConnection = createMockConnection().stub {
-            on { open() } doThrow IOException::class
+            on { open() } doThrow ioException
         }
         imapStore.enqueueImapConnection(imapConnection)
 
         assertFailure {
             imapStore.checkSettings()
-        }.isInstanceOf<MessagingException>().all {
-            hasMessage("Unable to connect")
-            cause().isNotNull().isInstanceOf<IOException>()
-        }
+        }.isSameInstanceAs(ioException)
     }
 
     @Test
@@ -122,12 +117,33 @@ class RealImapStoreTest {
     }
 
     @Test
-    fun `getFolders() with subscribedFoldersOnly = false`() {
+    fun `getFolders() should ignore NoSelect entries`() {
         val imapStore = createTestImapStore(isSubscribedFoldersOnly = false)
         val imapConnection = createMockConnection().stub {
             on { executeSimpleCommand("""LIST "" "*"""") } doReturn listOf(
+                createImapResponse("""* LIST () "." "INBOX""""),
+                createImapResponse("""* LIST (\Noselect) "." "Folder""""),
+                createImapResponse("""* LIST () "." "Folder.SubFolder""""),
+                createImapResponse("6 OK Success"),
+            )
+        }
+        imapStore.enqueueImapConnection(imapConnection)
+
+        val folders = imapStore.getFolders()
+
+        assertThat(folders).isNotNull()
+        assertThat(folders.map { it.serverId }).containsExactly("INBOX", "Folder.SubFolder")
+    }
+
+    @Test
+    fun `getFolders() should ignore NonExistent entries`() {
+        val imapStore = createTestImapStore(isSubscribedFoldersOnly = false)
+        val imapConnection = createMockConnection().stub {
+            on { hasCapability(Capabilities.LIST_EXTENDED) } doReturn true
+            on { hasCapability(Capabilities.SPECIAL_USE) } doReturn true
+            on { executeSimpleCommand("""LIST "" "*" RETURN (SPECIAL-USE)""") } doReturn listOf(
                 createImapResponse("""* LIST (\HasNoChildren) "." "INBOX""""),
-                createImapResponse("""* LIST (\Noselect \HasChildren) "." "Folder""""),
+                createImapResponse("""* LIST (\NonExistent \HasChildren) "." "Folder""""),
                 createImapResponse("""* LIST (\HasNoChildren) "." "Folder.SubFolder""""),
                 createImapResponse("6 OK Success"),
             )
@@ -138,6 +154,24 @@ class RealImapStoreTest {
 
         assertThat(folders).isNotNull()
         assertThat(folders.map { it.serverId }).containsExactly("INBOX", "Folder.SubFolder")
+    }
+
+    @Test
+    fun `getFolders() with subscribedFoldersOnly = false`() {
+        val imapStore = createTestImapStore(isSubscribedFoldersOnly = false)
+        val imapConnection = createMockConnection().stub {
+            on { executeSimpleCommand("""LIST "" "*"""") } doReturn listOf(
+                createImapResponse("""* LIST (\HasNoChildren) "." "INBOX""""),
+                createImapResponse("""* LIST (\HasNoChildren) "." "Folder""""),
+                createImapResponse("6 OK Success"),
+            )
+        }
+        imapStore.enqueueImapConnection(imapConnection)
+
+        val folders = imapStore.getFolders()
+
+        assertThat(folders).isNotNull()
+        assertThat(folders.map { it.serverId }).containsExactly("INBOX", "Folder")
     }
 
     @Test
@@ -264,7 +298,7 @@ class RealImapStoreTest {
 
         val result = imapStore.getConnection()
 
-        assertThat(result).isSameAs(imapConnection)
+        assertThat(result).isSameInstanceAs(imapConnection)
     }
 
     @Test
@@ -277,8 +311,8 @@ class RealImapStoreTest {
         val resultOne = imapStore.getConnection()
         val resultTwo = imapStore.getConnection()
 
-        assertThat(resultOne).isSameAs(imapConnectionOne)
-        assertThat(resultTwo).isSameAs(imapConnectionTwo)
+        assertThat(resultOne).isSameInstanceAs(imapConnectionOne)
+        assertThat(resultTwo).isSameInstanceAs(imapConnectionTwo)
     }
 
     @Test
@@ -293,7 +327,7 @@ class RealImapStoreTest {
 
         val result = imapStore.getConnection()
 
-        assertThat(result).isSameAs(imapConnection)
+        assertThat(result).isSameInstanceAs(imapConnection)
     }
 
     @Test
@@ -311,7 +345,7 @@ class RealImapStoreTest {
 
         val result = imapStore.getConnection()
 
-        assertThat(result).isSameAs(imapConnectionTwo)
+        assertThat(result).isSameInstanceAs(imapConnectionTwo)
     }
 
     @Test
@@ -330,7 +364,7 @@ class RealImapStoreTest {
 
         val result = imapStore.getConnection()
 
-        assertThat(result).isSameAs(imapConnectionTwo)
+        assertThat(result).isSameInstanceAs(imapConnectionTwo)
     }
 
     @Test
@@ -349,7 +383,7 @@ class RealImapStoreTest {
 
         val result = imapStore.getConnection()
 
-        assertThat(result).isSameAs(imapConnectionTwo)
+        assertThat(result).isSameInstanceAs(imapConnectionTwo)
     }
 
     @Test
@@ -368,7 +402,7 @@ class RealImapStoreTest {
 
         val result = imapStore.getConnection()
 
-        assertThat(result).isSameAs(imapConnectionTwo)
+        assertThat(result).isSameInstanceAs(imapConnectionTwo)
     }
 
     private fun createMockConnection(connectionGeneration: Int = 1): ImapConnection {
@@ -391,7 +425,7 @@ class RealImapStoreTest {
                 autoDetectNamespace = true,
                 pathPrefix = null,
                 useCompression = false,
-                sendClientId = false,
+                sendClientInfo = false,
             ),
         )
     }
@@ -413,7 +447,8 @@ class RealImapStoreTest {
         return object : ImapStoreConfig {
             override val logLabel: String = "irrelevant"
             override fun isSubscribedFoldersOnly(): Boolean = isSubscribedFoldersOnly
-            override fun clientId(): ImapClientId = ImapClientId(appName = "irrelevant", appVersion = "irrelevant")
+            override fun isExpungeImmediately(): Boolean = true
+            override fun clientInfo() = ImapClientInfo(appName = "irrelevant", appVersion = "irrelevant")
         }
     }
 

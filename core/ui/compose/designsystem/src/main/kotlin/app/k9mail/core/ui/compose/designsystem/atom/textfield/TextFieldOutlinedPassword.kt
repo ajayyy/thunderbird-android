@@ -1,8 +1,7 @@
 package app.k9mail.core.ui.compose.designsystem.atom.textfield
 
+import android.os.Build
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,14 +9,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.password
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import app.k9mail.core.ui.compose.designsystem.R
-import app.k9mail.core.ui.compose.theme.Icons
-import app.k9mail.core.ui.compose.theme.PreviewWithThemes
-import androidx.compose.material.OutlinedTextField as MaterialOutlinedTextField
+import app.k9mail.core.ui.compose.designsystem.atom.icon.Icons
+import androidx.compose.material3.Icon as Material3Icon
+import androidx.compose.material3.IconButton as Material3IconButton
+import androidx.compose.material3.OutlinedTextField as Material3OutlinedTextField
 
 @Suppress("LongParameterList")
 @Composable
@@ -33,10 +34,10 @@ fun TextFieldOutlinedPassword(
 ) {
     var passwordVisibilityState by rememberSaveable { mutableStateOf(false) }
 
-    MaterialOutlinedTextField(
+    Material3OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
+        onValueChange = stripLineBreaks(onValueChange),
+        modifier = modifier.applyLegacyPasswordSemantics(),
         enabled = isEnabled,
         label = selectLabel(label, isRequired),
         trailingIcon = selectTrailingIcon(
@@ -68,10 +69,10 @@ fun TextFieldOutlinedPassword(
     isRequired: Boolean = false,
     hasError: Boolean = false,
 ) {
-    MaterialOutlinedTextField(
+    Material3OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
+        onValueChange = stripLineBreaks(onValueChange),
+        modifier = modifier.applyLegacyPasswordSemantics(),
         enabled = isEnabled,
         label = selectLabel(label, isRequired),
         trailingIcon = selectTrailingIcon(
@@ -99,9 +100,9 @@ private fun selectTrailingIcon(
     return if (hasTrailingIcon) {
         {
             val image = if (isShowPasswordAllowed(isEnabled, isPasswordVisible)) {
-                Icons.Filled.passwordVisibility
+                Icons.Outlined.Visibility
             } else {
-                Icons.Filled.passwordVisibilityOff
+                Icons.Outlined.VisibilityOff
             }
 
             val description = if (isShowPasswordAllowed(isEnabled, isPasswordVisible)) {
@@ -110,8 +111,8 @@ private fun selectTrailingIcon(
                 stringResource(id = R.string.designsystem_atom_password_textfield_show_password)
             }
 
-            IconButton(onClick = onClick) {
-                Icon(imageVector = image, contentDescription = description)
+            Material3IconButton(onClick = onClick) {
+                Material3Icon(imageVector = image, contentDescription = description)
             }
         }
     } else {
@@ -132,49 +133,15 @@ private fun selectVisualTransformation(
 
 private fun isShowPasswordAllowed(isEnabled: Boolean, isPasswordVisible: Boolean) = isEnabled && isPasswordVisible
 
-@Preview(showBackground = true)
-@Composable
-internal fun PasswordTextFieldOutlinedPreview() {
-    PreviewWithThemes {
-        TextFieldOutlinedPassword(
-            value = "Input text",
-            onValueChange = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun TextFieldOutlinedPasswordWithLabelPreview() {
-    PreviewWithThemes {
-        TextFieldOutlinedPassword(
-            value = "Input text",
-            label = "Label",
-            onValueChange = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun TextFieldOutlinedPasswordDisabledPreview() {
-    PreviewWithThemes {
-        TextFieldOutlinedPassword(
-            value = "Input text",
-            onValueChange = {},
-            isEnabled = false,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-internal fun TextFieldOutlinedPasswordErrorPreview() {
-    PreviewWithThemes {
-        TextFieldOutlinedPassword(
-            value = "Input text",
-            onValueChange = {},
-            hasError = true,
-        )
+private fun Modifier.applyLegacyPasswordSemantics(): Modifier {
+    /*
+     * Workaround for a crash that can occur when the password visibility state changes
+     * while an accessibility service is enabled on devices running Android API level 25 or below.
+     * This approach mitigates the issue by applying password semantics only on affected versions.
+     */
+    return this.semantics {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+            password()
+        }
     }
 }

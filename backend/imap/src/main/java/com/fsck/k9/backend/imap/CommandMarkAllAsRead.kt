@@ -8,13 +8,10 @@ internal class CommandMarkAllAsRead(private val imapStore: ImapStore) {
 
     fun markAllAsRead(folderServerId: String) {
         val remoteFolder = imapStore.getFolder(folderServerId)
-        if (!remoteFolder.exists()) return
-
         try {
             remoteFolder.open(OpenMode.READ_WRITE)
-            if (remoteFolder.mode != OpenMode.READ_WRITE) return
 
-            remoteFolder.setFlags(setOf(Flag.SEEN), true)
+            remoteFolder.setFlagsForAllMessages(setOf(Flag.SEEN), true)
         } finally {
             remoteFolder.close()
         }

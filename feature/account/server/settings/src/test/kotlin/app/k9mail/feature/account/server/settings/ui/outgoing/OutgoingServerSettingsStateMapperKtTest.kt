@@ -27,7 +27,6 @@ class OutgoingServerSettingsStateMapperKtTest {
         assertThat(result).isEqualTo(
             State(
                 username = StringInputField(value = "test@example.com"),
-                isLoading = false,
             ),
         )
     }
@@ -46,7 +45,6 @@ class OutgoingServerSettingsStateMapperKtTest {
             State(
                 username = StringInputField(value = "test@domain.example"),
                 password = StringInputField(value = INCOMING_SERVER_PASSWORD),
-                isLoading = false,
             ),
         )
     }
@@ -59,11 +57,11 @@ class OutgoingServerSettingsStateMapperKtTest {
 
         val result = accountState.toOutgoingServerSettingsState()
 
-        assertThat(result).isEqualTo(OUTGOING_STATE.copy(isLoading = false))
+        assertThat(result).isEqualTo(OUTGOING_STATE)
     }
 
     @Test
-    fun `should use password from incomingServerSettings when outgoingServerSettings contains no password`() {
+    fun `should use password from incomingServerSettings when outgoingServerSettings is missing a password`() {
         val accountState = AccountState(
             incomingServerSettings = IMAP_SERVER_SETTINGS,
             outgoingServerSettings = SMTP_SERVER_SETTINGS.copy(password = null),
@@ -74,7 +72,6 @@ class OutgoingServerSettingsStateMapperKtTest {
         assertThat(result).isEqualTo(
             OUTGOING_STATE.copy(
                 password = StringInputField(value = INCOMING_SERVER_PASSWORD),
-                isLoading = false,
             ),
         )
     }
@@ -90,7 +87,6 @@ class OutgoingServerSettingsStateMapperKtTest {
         assertThat(result).isEqualTo(
             OUTGOING_STATE.copy(
                 password = StringInputField(value = ""),
-                isLoading = false,
             ),
         )
     }

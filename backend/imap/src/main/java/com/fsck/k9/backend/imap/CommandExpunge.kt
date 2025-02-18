@@ -11,10 +11,7 @@ internal class CommandExpunge(private val imapStore: ImapStore) {
 
         val remoteFolder = imapStore.getFolder(folderServerId)
         try {
-            if (!remoteFolder.exists()) return
-
             remoteFolder.open(OpenMode.READ_WRITE)
-            if (remoteFolder.mode != OpenMode.READ_WRITE) return
 
             remoteFolder.expunge()
 
@@ -27,10 +24,7 @@ internal class CommandExpunge(private val imapStore: ImapStore) {
     fun expungeMessages(folderServerId: String, messageServerIds: List<String>) {
         val remoteFolder = imapStore.getFolder(folderServerId)
         try {
-            if (!remoteFolder.exists()) return
-
             remoteFolder.open(OpenMode.READ_WRITE)
-            if (remoteFolder.mode != OpenMode.READ_WRITE) return
 
             remoteFolder.expungeUids(messageServerIds)
         } finally {

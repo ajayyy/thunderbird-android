@@ -7,8 +7,8 @@ import androidx.navigation.compose.NavHost
 import app.k9mail.core.ui.compose.common.activity.LocalActivity
 import app.k9mail.feature.account.edit.navigation.accountEditRoute
 import app.k9mail.feature.account.setup.navigation.accountSetupRoute
+import app.k9mail.feature.funding.api.FundingNavigation
 import app.k9mail.feature.launcher.FeatureLauncherExternalContract.AccountSetupFinishedLauncher
-import app.k9mail.feature.launcher.FeatureLauncherExternalContract.ImportSettingsLauncher
 import app.k9mail.feature.onboarding.main.navigation.NAVIGATION_ROUTE_ONBOARDING
 import app.k9mail.feature.onboarding.main.navigation.onboardingRoute
 import org.koin.compose.koinInject
@@ -18,8 +18,8 @@ fun FeatureLauncherNavHost(
     navController: NavHostController,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    importSettingsLauncher: ImportSettingsLauncher = koinInject(),
     accountSetupFinishedLauncher: AccountSetupFinishedLauncher = koinInject(),
+    fundingNavigation: FundingNavigation = koinInject(),
 ) {
     val activity = LocalActivity.current
 
@@ -29,8 +29,11 @@ fun FeatureLauncherNavHost(
         modifier = modifier,
     ) {
         onboardingRoute(
-            onImport = { importSettingsLauncher.launch() },
-        ) { accountUuid -> accountSetupFinishedLauncher.launch(accountUuid) }
+            onFinish = { accountUuid ->
+                accountSetupFinishedLauncher.launch(accountUuid)
+                activity.finish()
+            },
+        )
         accountSetupRoute(
             onBack = onBack,
             onFinish = { accountSetupFinishedLauncher.launch(it) },
@@ -38,6 +41,12 @@ fun FeatureLauncherNavHost(
         accountEditRoute(
             onBack = onBack,
             onFinish = { activity.finish() },
+        )
+
+        fundingNavigation.registerRoutes(
+            navGraphBuilder = this,
+            onBack = onBack,
+            onFinish = { onBack() },
         )
     }
 }

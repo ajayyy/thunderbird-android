@@ -12,18 +12,19 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.k9mail.core.ui.compose.designsystem.atom.Icon
-import app.k9mail.core.ui.compose.designsystem.atom.text.TextSubtitle1
+import app.k9mail.core.ui.compose.designsystem.atom.icon.Icon
+import app.k9mail.core.ui.compose.designsystem.atom.icon.Icons
+import app.k9mail.core.ui.compose.designsystem.atom.text.TextTitleMedium
 import app.k9mail.core.ui.compose.designsystem.atom.textfield.TextFieldOutlined
 import app.k9mail.core.ui.compose.designsystem.atom.textfield.TextFieldOutlinedEmailAddress
 import app.k9mail.core.ui.compose.designsystem.atom.textfield.TextFieldOutlinedNumber
 import app.k9mail.core.ui.compose.designsystem.atom.textfield.TextFieldOutlinedPassword
 import app.k9mail.core.ui.compose.designsystem.atom.textfield.TextFieldOutlinedSelect
 import app.k9mail.core.ui.compose.designsystem.molecule.input.CheckboxInput
-import app.k9mail.core.ui.compose.theme.Icons
-import app.k9mail.core.ui.compose.theme.MainTheme
+import app.k9mail.core.ui.compose.theme2.MainTheme
 import app.k9mail.ui.catalog.ui.common.helper.WithRememberedState
-import app.k9mail.ui.catalog.ui.common.list.itemDefaultPadding
+import app.k9mail.ui.catalog.ui.common.list.defaultItemPadding
+import app.k9mail.ui.catalog.ui.common.list.fullSpanItem
 import app.k9mail.ui.catalog.ui.common.list.sectionHeaderItem
 import app.k9mail.ui.catalog.ui.common.list.sectionSubtitleItem
 import kotlinx.collections.immutable.ImmutableList
@@ -69,7 +70,7 @@ fun <T> TextFieldDemo(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .itemDefaultPadding()
+                .padding(defaultItemPadding())
                 .then(modifier),
         ) {
             key(state.value.showLabel, state.value.isRequired) {
@@ -85,7 +86,7 @@ fun <T> TextFieldDemo(
                             start = MainTheme.spacings.default,
                         ),
                 ) {
-                    TextSubtitle1(text = "Configuration:")
+                    TextTitleMedium(text = "Configuration:")
                 }
 
                 CheckboxInput(
@@ -148,7 +149,7 @@ fun <T> TextFieldDemo(
 private val defaultPadding = PaddingValues(0.dp)
 
 private fun LazyGridScope.textFieldOutlinedItems() {
-    item {
+    fullSpanItem {
         TextFieldDemo(
             hasTrailingIcon = true,
             hasSingleLine = true,
@@ -160,7 +161,7 @@ private fun LazyGridScope.textFieldOutlinedItems() {
                 onValueChange = { state.value = state.value.copy(input = it) },
                 trailingIcon = {
                     if (state.value.showTrailingIcon) {
-                        Icon(imageVector = Icons.Filled.user)
+                        Icon(imageVector = Icons.Outlined.AccountCircle)
                     }
                 },
                 isEnabled = !state.value.isDisabled,
@@ -175,7 +176,7 @@ private fun LazyGridScope.textFieldOutlinedItems() {
 }
 
 private fun LazyGridScope.passwordTextFieldOutlinedItems() {
-    item {
+    fullSpanItem {
         TextFieldDemo(
             initialState = TextFieldState(
                 input = "",
@@ -197,7 +198,7 @@ private fun LazyGridScope.passwordTextFieldOutlinedItems() {
 }
 
 private fun LazyGridScope.emailTextFieldOutlinedItems() {
-    item {
+    fullSpanItem {
         TextFieldDemo(
             initialState = TextFieldState(
                 input = "",
@@ -219,7 +220,7 @@ private fun LazyGridScope.emailTextFieldOutlinedItems() {
 }
 
 private fun LazyGridScope.numberTextFieldOutlinedItems() {
-    item {
+    fullSpanItem {
         TextFieldDemo(
             initialState = TextFieldState<Long?>(
                 input = 123L,
@@ -246,7 +247,7 @@ private data class TextFieldSelectState(
 )
 
 private fun LazyGridScope.selectionTextFieldOutlinedItems() {
-    item {
+    fullSpanItem {
         TextFieldDemo(
             initialState = TextFieldState(
                 input = TextFieldSelectState(),

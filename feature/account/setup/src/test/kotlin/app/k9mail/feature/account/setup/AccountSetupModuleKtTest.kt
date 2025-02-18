@@ -1,7 +1,9 @@
 package app.k9mail.feature.account.setup
 
 import android.content.Context
+import app.k9mail.autodiscovery.api.AutoDiscovery
 import app.k9mail.core.common.oauth.OAuthConfigurationFactory
+import app.k9mail.core.common.provider.BrandNameProvider
 import app.k9mail.feature.account.common.AccountCommonExternalContract
 import app.k9mail.feature.account.common.domain.entity.AccountState
 import app.k9mail.feature.account.common.domain.entity.InteractionMode
@@ -12,9 +14,12 @@ import app.k9mail.feature.account.server.settings.ui.outgoing.OutgoingServerSett
 import app.k9mail.feature.account.server.validation.ui.ServerValidationContract
 import app.k9mail.feature.account.setup.AccountSetupExternalContract.AccountCreator
 import app.k9mail.feature.account.setup.AccountSetupExternalContract.AccountCreator.AccountCreatorResult
+import app.k9mail.feature.account.setup.ui.FakeBrandNameProvider
 import app.k9mail.feature.account.setup.ui.autodiscovery.AccountAutoDiscoveryContract
 import app.k9mail.feature.account.setup.ui.createaccount.CreateAccountContract
-import app.k9mail.feature.account.setup.ui.options.AccountOptionsContract
+import app.k9mail.feature.account.setup.ui.options.display.DisplayOptionsContract
+import app.k9mail.feature.account.setup.ui.options.sync.SyncOptionsContract
+import app.k9mail.feature.account.setup.ui.specialfolders.SpecialFoldersContract
 import com.fsck.k9.mail.oauth.AuthStateStorage
 import com.fsck.k9.mail.oauth.OAuth2TokenProvider
 import com.fsck.k9.mail.oauth.OAuth2TokenProviderFactory
@@ -26,6 +31,7 @@ import org.junit.runner.RunWith
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import org.koin.test.KoinTest
@@ -58,6 +64,9 @@ class AccountSetupModuleKtTest : KoinTest {
         }
         single<LocalKeyStore> { mock() }
         single<AccountCommonExternalContract.AccountStateLoader> { mock() }
+        factory<AccountSetupExternalContract.AccountOwnerNameProvider> { mock() }
+        single<List<AutoDiscovery>>(named("extraAutoDiscoveries")) { emptyList() }
+        single<BrandNameProvider> { FakeBrandNameProvider }
     }
 
     @Test
@@ -70,7 +79,8 @@ class AccountSetupModuleKtTest : KoinTest {
                 ServerValidationContract.State::class,
                 IncomingServerSettingsContract.State::class,
                 OutgoingServerSettingsContract.State::class,
-                AccountOptionsContract.State::class,
+                DisplayOptionsContract.State::class,
+                SyncOptionsContract.State::class,
                 AccountState::class,
                 ServerCertificateErrorContract.State::class,
                 AuthStateStorage::class,
@@ -78,7 +88,9 @@ class AccountSetupModuleKtTest : KoinTest {
                 Boolean::class,
                 Class.forName("net.openid.appauth.AppAuthConfiguration").kotlin,
                 InteractionMode::class,
+                SpecialFoldersContract.State::class,
                 CreateAccountContract.State::class,
+                AccountSetupExternalContract.AccountOwnerNameProvider::class,
             ),
         )
 

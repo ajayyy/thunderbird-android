@@ -2,6 +2,7 @@ package app.k9mail.feature.account.edit.ui.server.settings.modify
 
 import app.k9mail.core.ui.compose.testing.MainDispatcherRule
 import app.k9mail.core.ui.compose.testing.mvi.assertThatAndMviTurbinesConsumed
+import app.k9mail.core.ui.compose.testing.mvi.runMviTest
 import app.k9mail.core.ui.compose.testing.mvi.turbinesWithInitialStateCheck
 import app.k9mail.feature.account.common.data.InMemoryAccountStateRepository
 import app.k9mail.feature.account.common.domain.entity.AccountState
@@ -12,13 +13,11 @@ import app.k9mail.feature.account.common.domain.input.NumberInputField
 import app.k9mail.feature.account.common.domain.input.StringInputField
 import app.k9mail.feature.account.server.settings.ui.incoming.IncomingServerSettingsContract.Event
 import app.k9mail.feature.account.server.settings.ui.incoming.IncomingServerSettingsContract.State
-import app.k9mail.feature.account.server.settings.ui.incoming.fake.FakeIncomingServerSettingsValidator
 import assertk.assertions.isEqualTo
 import com.fsck.k9.mail.AuthType
 import com.fsck.k9.mail.ServerSettings
 import com.fsck.k9.mail.store.imap.ImapStoreSettings
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 
@@ -28,7 +27,7 @@ class ModifyIncomingServerSettingsViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `should load account state from use case`() = runTest {
+    fun `should load account state from use case`() = runMviTest {
         val accountUuid = "accountUuid"
         val accountState = AccountState(
             uuid = "accountUuid",
@@ -46,7 +45,7 @@ class ModifyIncomingServerSettingsViewModelTest {
                     autoDetectNamespace = true,
                     pathPrefix = null,
                     useCompression = true,
-                    sendClientId = true,
+                    sendClientInfo = true,
                 ),
             ),
         )
@@ -80,9 +79,7 @@ class ModifyIncomingServerSettingsViewModelTest {
                     imapAutodetectNamespaceEnabled = true,
                     imapPrefix = StringInputField(value = ""),
                     imapUseCompression = true,
-                    imapSendClientId = true,
-
-                    isLoading = false,
+                    imapSendClientInfo = true,
                 ),
             )
         }

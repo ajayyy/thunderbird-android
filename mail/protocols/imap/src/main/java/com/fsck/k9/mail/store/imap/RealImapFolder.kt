@@ -40,13 +40,27 @@ internal class RealImapFolder(
     private var canCreateKeywords = false
     private var uidValidity: Long? = null
 
+    /**
+     * Specifies whether the folder was opened in read-only or read-write mode based on the tagged OK response to
+     * the SELECT or EXAMINE command (READ-ONLY or READ-WRITE).
+     *
+     * Most of the time this will match the [mode] value. But it's possible for the SELECT command to open a folder in
+     * read-only mode. See RFC 3501, section 6.3.1.
+     *
+     * Note: Currently unused.
+     */
+    private var serverOpenMode: OpenMode? = null
+
     override var messageCount = -1
         private set
 
+    /**
+     * The [OpenMode] value that was passed when this folder was [opened][open].
+     */
     override var mode: OpenMode? = null
         private set
 
-    val isOpen: Boolean
+    override val isOpen: Boolean
         get() = connection != null
 
     override fun getUidValidity(): Long? {
@@ -84,6 +98,12 @@ internal class RealImapFolder(
         return handleUntaggedResponses(connection!!.executeSimpleCommand(command))
     }
 
+    /**
+     * Opens the folder in either read-only or read-write mode.
+     *
+     * When [OpenMode.READ_ONLY] is passed the EXAMINE command is used to open the folder.
+     * When [OpenMode.READ_WRITE] is passed the SELECT command is used to open the folder.
+     */
     @Throws(MessagingException::class)
     override fun open(mode: OpenMode) {
         internalOpen(mode)
@@ -118,10 +138,6 @@ internal class RealImapFolder(
             val command = String.format("%s %s", openCommand, escapedFolderName)
             val responses = executeSimpleCommand(command)
 
-            /*
-             * If the command succeeds we expect the folder has been opened read-write unless we
-             * are notified otherwise in the responses.
-             */
             this.mode = mode
 
             for (response in responses) {
@@ -160,7 +176,7 @@ internal class RealImapFolder(
     private fun handleSelectOrExamineOkResponse(response: ImapResponse) {
         val selectOrExamineResponse = SelectOrExamineResponse.parse(response) ?: return // This shouldn't happen
         if (selectOrExamineResponse.hasOpenMode()) {
-            mode = selectOrExamineResponse.openMode
+            serverOpenMode = selectOrExamineResponse.openMode
         }
     }
 
@@ -181,22 +197,6 @@ internal class RealImapFolder(
             }
 
             connection = null
-        }
-    }
-
-    @Throws(MessagingException::class)
-    private fun exists(escapedFolderName: String): Boolean {
-        return try {
-            // Since we don't care about RECENT, we'll use that for the check, because we're checking
-            // a folder other than ourself, and don't want any untagged responses to cause a change
-            // in our own fields
-            connection!!.executeSimpleCommand(String.format("STATUS %s (RECENT)", escapedFolderName))
-
-            true
-        } catch (ioe: IOException) {
-            throw ioExceptionHandler(connection, ioe)
-        } catch (e: NegativeImapResponseException) {
-            false
         }
     }
 
@@ -288,19 +288,6 @@ internal class RealImapFolder(
         val encodedDestinationFolderName = folderNameCodec.encode(folder.prefixedName)
         val escapedDestinationFolderName = ImapUtility.encodeString(encodedDestinationFolderName)
 
-        // TODO: Just perform the operation and only check for existence of the folder if the operation fails.
-        if (!exists(escapedDestinationFolderName)) {
-            if (K9MailLib.isDebug()) {
-                Timber.i(
-                    "ImapFolder.copyMessages: couldn't find remote folder '%s' for %s",
-                    escapedDestinationFolderName,
-                    logId,
-                )
-            }
-
-            throw FolderNotFoundException(folder.serverId)
-        }
-
         return try {
             val imapResponses = connection!!.executeCommandWithIdSet(
                 Commands.UID_COPY,
@@ -320,7 +307,7 @@ internal class RealImapFolder(
             return null
         }
 
-        checkOpen()
+        checkOpenWithWriteAccess()
 
         return if (connection.hasCapability(Capabilities.MOVE)) {
             moveMessagesUsingMoveExtension(messages, folder)
@@ -354,7 +341,7 @@ internal class RealImapFolder(
 
         val uidMapping = copyMessages(messages, folder)
         setFlags(messages, setOf(Flag.DELETED), true)
-        expungeUidsOnly(uids)
+        expungeUidsAfterDelete(uids)
 
         return uidMapping
     }
@@ -993,8 +980,7 @@ internal class RealImapFolder(
      */
     @Throws(MessagingException::class)
     override fun appendMessages(messages: List<Message>): Map<String, String>? {
-        open(OpenMode.READ_WRITE)
-        checkOpen()
+        checkOpenWithWriteAccess()
 
         return try {
             val uidMap: MutableMap<String, String> = HashMap()
@@ -1102,9 +1088,31 @@ internal class RealImapFolder(
     }
 
     @Throws(MessagingException::class)
+    override fun deleteMessages(messages: List<ImapMessage>) {
+        checkOpenWithWriteAccess()
+
+        setFlags(messages, setOf(Flag.DELETED), true)
+
+        if (internalImapStore.config.isExpungeImmediately()) {
+            val uids = messages.map { it.uid }
+            expungeUids(uids)
+        }
+    }
+
+    @Throws(MessagingException::class)
+    override fun deleteAllMessages() {
+        checkOpenWithWriteAccess()
+
+        setFlagsForAllMessages(setOf(Flag.DELETED), true)
+
+        if (internalImapStore.config.isExpungeImmediately()) {
+            expunge()
+        }
+    }
+
+    @Throws(MessagingException::class)
     override fun expunge() {
-        open(OpenMode.READ_WRITE)
-        checkOpen()
+        checkOpenWithWriteAccess()
 
         try {
             executeSimpleCommand("EXPUNGE")
@@ -1114,18 +1122,16 @@ internal class RealImapFolder(
     }
 
     override fun expungeUids(uids: List<String>) {
+        checkOpenWithWriteAccess()
         expungeUids(uids, fullExpungeFallback = true)
     }
 
-    private fun expungeUidsOnly(uids: List<String>) {
-        expungeUids(uids, fullExpungeFallback = false)
+    private fun expungeUidsAfterDelete(uids: List<String>) {
+        expungeUids(uids, fullExpungeFallback = internalImapStore.config.isExpungeImmediately())
     }
 
     private fun expungeUids(uids: List<String>, fullExpungeFallback: Boolean) {
         require(uids.isNotEmpty()) { "expungeUids() must be called with a non-empty set of UIDs" }
-
-        open(OpenMode.READ_WRITE)
-        checkOpen()
 
         try {
             if (connection!!.isUidPlusCapable) {
@@ -1142,9 +1148,8 @@ internal class RealImapFolder(
     }
 
     @Throws(MessagingException::class)
-    override fun setFlags(flags: Set<Flag>, value: Boolean) {
-        open(OpenMode.READ_WRITE)
-        checkOpen()
+    override fun setFlagsForAllMessages(flags: Set<Flag>, value: Boolean) {
+        checkOpenWithWriteAccess()
 
         val canCreateForwardedFlag = canCreateKeywords ||
             internalImapStore.getPermanentFlagsIndex().contains(Flag.FORWARDED)
@@ -1166,8 +1171,7 @@ internal class RealImapFolder(
 
     @Throws(MessagingException::class)
     override fun setFlags(messages: List<ImapMessage>, flags: Set<Flag>, value: Boolean) {
-        open(OpenMode.READ_WRITE)
-        checkOpen()
+        checkOpenWithWriteAccess()
 
         val uids = messages.map { it.uid.toLong() }.toSet()
         val canCreateForwardedFlag = canCreateKeywords ||
@@ -1181,11 +1185,13 @@ internal class RealImapFolder(
         }
     }
 
-    @Throws(MessagingException::class)
     private fun checkOpen() {
-        if (!isOpen) {
-            throw MessagingException("Folder $prefixedName is not open.")
-        }
+        check(isOpen) { "Folder '$serverId' is not open." }
+    }
+
+    private fun checkOpenWithWriteAccess() {
+        checkOpen()
+        check(mode == OpenMode.READ_WRITE) { "Folder '$serverId' needs to be opened for read-write access." }
     }
 
     private fun ioExceptionHandler(connection: ImapConnection?, ioe: IOException): MessagingException {
@@ -1226,7 +1232,6 @@ internal class RealImapFolder(
         performFullTextSearch: Boolean,
     ): List<ImapMessage> {
         try {
-            open(OpenMode.READ_ONLY)
             checkOpen()
 
             inSearch = true

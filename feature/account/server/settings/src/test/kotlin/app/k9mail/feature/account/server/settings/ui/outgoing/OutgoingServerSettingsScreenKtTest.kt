@@ -1,10 +1,9 @@
 package app.k9mail.feature.account.server.settings.ui.outgoing
 
 import app.k9mail.core.ui.compose.testing.ComposeTest
-import app.k9mail.core.ui.compose.testing.setContent
+import app.k9mail.core.ui.compose.testing.setContentWithTheme
 import app.k9mail.feature.account.server.settings.ui.outgoing.OutgoingServerSettingsContract.Effect
 import app.k9mail.feature.account.server.settings.ui.outgoing.OutgoingServerSettingsContract.State
-import app.k9mail.feature.account.server.settings.ui.outgoing.fake.FakeOutgoingServerSettingsViewModel
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import kotlinx.coroutines.test.runTest
@@ -19,7 +18,7 @@ class OutgoingServerSettingsScreenKtTest : ComposeTest() {
         var onNextCounter = 0
         var onBackCounter = 0
 
-        setContent {
+        setContentWithTheme {
             OutgoingServerSettingsScreen(
                 onNext = { onNextCounter++ },
                 onBack = { onBackCounter++ },
